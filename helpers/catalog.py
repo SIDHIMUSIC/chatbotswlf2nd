@@ -1,4 +1,4 @@
-"""Live NaraRouter + OpenRouter model catalog."""
+"""Live NaraRouter catalog — never block the first chat."""
 import time
 import requests
 
@@ -7,23 +7,26 @@ from config import (
     NARA_BASE_URL,
     NARA_IMAGE_MODELS,
     NARA_MODELS,
-    OPENROUTER_BASE_URL,
     OPENROUTER_IMAGE_MODELS,
-    OPENROUTER_KEY,
     OPENROUTER_MODELS,
     AI_QUALITY,
 )
 
 PLANS_URL = "https://router.bynara.id/api/plans"
-IMAGE_HINTS = (
-    "image", "imagine", "flux", "video", "lyria", "tts", "whisper",
-    "embed", "diffusion",
-)
+IMAGE_HINTS = ("image", "imagine", "flux", "video", "lyria", "tts", "whisper", "embed", "diffusion")
 
-_CACHE = {"t": 0, "chat": [], "image": [], "all": []}
-_TTL = 600
+FAST_FREE = [
+    "agnes-2.5-flash",
+    "agnes-2.0-flash",
+    "glm-5.3-flash-free",
+    "minimax-m3-free",
+    "auto/bynara",
+]
+
+_CACHE = {"t": 0, "chat": list(NARA_MODELS) or list(FAST_FREE), "image": list(NARA_IMAGE_MODELS), "all": []}
+_TTL = 1800
 _DEAD = {}
-_RR = {"nara": 0, "openrouter": 0}
+_BEST = {"nara": None, "openrouter": None}
 
 
 def _is_image(mid: str) -> bool:
@@ -31,135 +34,69 @@ def _is_image(mid: str) -> bool:
     return any(h in m for h in IMAGE_HINTS)
 
 
-def _mark_dead(model: str, seconds=600):
-    _DEAD[model] = time.time() + seconds
-
-
 def is_dead(model: str) -> bool:
-    until = _DEAD.get(model, 0)
-    return until > time.time()
+    return _DEAD.get(model, 0) > time.time()
 
 
 def mark_fail(model: str):
-    _mark_dead(model, 8 * 60)
+    _DEAD[model] = time.time() + 180
+    if _BEST.get("nara") == model:
+        _BEST["nara"] = None
 
 
-def mark_ok(model: str):
+def mark_ok(model: str, provider="nara"):
     _DEAD.pop(model, None)
-
-
-def _fetch_nara_from_plans():
-    r = requests.get(PLANS_URL, timeout=15)
-    r.raise_for_status()
-    data = r.json()
-    plans = data.get("data") or []
-    free = []
-    paid = []
-    seen = set()
-    for plan in plans:
-        if not plan.get("is_active"):
-            continue
-        names = plan.get("models") or []
-        bucket = free if (plan.get("code") == "free" or plan.get("price_daily_idr") == 0) else paid
-        for mid in names:
-            if not mid or mid in seen:
-                continue
-            seen.add(mid)
-            bucket.append(mid)
-    return free, paid
-
-
-def _fetch_nara_entitled():
-    if not NARA_API_KEY:
-        return []
-    r = requests.get(
-        f"{NARA_BASE_URL}/models",
-        headers={"Authorization": f"Bearer {NARA_API_KEY}"},
-        timeout=15,
-    )
-    if r.status_code >= 400:
-        return []
-    data = r.json()
-    items = data.get("data") or data.get("models") or []
-    out = []
-    for item in items:
-        mid = item.get("id") if isinstance(item, dict) else str(item)
-        if mid:
-            out.append(mid)
-    return out
+    _BEST[provider] = model
 
 
 def refresh(force=False):
     now = time.time()
-    if not force and _CACHE["chat"] and now - _CACHE["t"] < _TTL:
+    if not force and _CACHE["t"] and now - _CACHE["t"] < _TTL:
         return _CACHE
-    chat, image = [], []
     try:
-        free, paid = _fetch_nara_from_plans()
+        r = requests.get(PLANS_URL, timeout=4)
+        r.raise_for_status()
+        plans = (r.json().get("data") or [])
+        free = []
+        for plan in plans:
+            if plan.get("code") == "free" or plan.get("price_daily_idr") == 0:
+                for mid in plan.get("models") or []:
+                    if mid and mid not in free and not _is_image(mid):
+                        free.append(mid)
+        if free:
+            _CACHE["chat"] = free + [m for m in FAST_FREE if m not in free]
+            _CACHE["t"] = now
+            print("Nara catalog:", _CACHE["chat"][:8])
     except Exception as e:
-        print("Nara plans fetch fail:", e)
-        free, paid = list(NARA_MODELS), []
-    entitled = []
-    try:
-        entitled = _fetch_nara_entitled()
-    except Exception as e:
-        print("Nara /v1/models fail:", e)
-
-    nara_all = []
-    for group in (free, entitled, paid, NARA_MODELS, ["auto/bynara", "gpt-5.5"]):
-        for mid in group:
-            if mid and mid not in nara_all:
-                nara_all.append(mid)
-
-    quality = AI_QUALITY
-    if quality == "free":
-        pool = [m for m in (free + entitled) if m]
-        if not pool:
-            pool = nara_all
-    elif quality == "high":
-        high = [m for m in nara_all if any(x in m.lower() for x in ("gpt-5", "claude", "opus", "sonnet"))]
-        pool = high + [m for m in nara_all if m not in high]
-    else:
-        pool = []
-        for mid in free + ["auto/bynara"] + [m for m in nara_all if m not in free]:
-            if mid not in pool:
-                pool.append(mid)
-
-    for mid in pool + list(NARA_IMAGE_MODELS):
-        if _is_image(mid):
-            if mid not in image:
-                image.append(mid)
-        else:
-            if mid not in chat:
-                chat.append(mid)
-
-    _CACHE.update({"t": now, "chat": chat, "image": image or list(NARA_IMAGE_MODELS), "all": nara_all})
-    print("Nara catalog chat models:", len(chat), chat[:20])
+        print("Nara plans skip:", e)
+        if not _CACHE["t"]:
+            _CACHE["chat"] = list(NARA_MODELS) or list(FAST_FREE)
+            _CACHE["t"] = now
     return _CACHE
 
 
 def nara_chat_models():
-    refresh()
-    return [m for m in _CACHE["chat"] if not is_dead(m)] or list(_CACHE["chat"])
+    models = [m for m in (_CACHE.get("chat") or FAST_FREE) if not is_dead(m) and not _is_image(m)]
+    best = _BEST.get("nara")
+    if best and best in models:
+        models = [best] + [m for m in models if m != best]
+    return models or list(FAST_FREE)
 
 
 def nara_image_models():
-    refresh()
-    imgs = [m for m in _CACHE["image"] if not is_dead(m)]
-    return imgs or list(NARA_IMAGE_MODELS)
+    return [m for m in (_CACHE.get("image") or NARA_IMAGE_MODELS) if not is_dead(m)] or list(NARA_IMAGE_MODELS)
 
 
 def next_nara_chat():
-    models = nara_chat_models()
-    if not models:
-        return []
-    i = _RR["nara"] % len(models)
-    _RR["nara"] += 1
-    return models[i:] + models[:i]
+    return nara_chat_models()
 
 
 def or_chat_models():
-    return [m for m in OPENROUTER_MODELS if not is_dead(m)] or list(OPENROUTER_MODELS)
+    models = [m for m in OPENROUTER_MODELS if not is_dead(m)] or list(OPENROUTER_MODELS)
+    best = _BEST.get("openrouter")
+    if best and best in models:
+        models = [best] + [m for m in models if m != best]
+    return models
 
 
 def or_image_models():
@@ -167,10 +104,10 @@ def or_image_models():
 
 
 def snapshot():
-    refresh()
     return {
-        "chat": _CACHE["chat"],
-        "image": _CACHE["image"],
+        "chat": _CACHE.get("chat") or FAST_FREE,
+        "image": _CACHE.get("image") or list(NARA_IMAGE_MODELS),
         "dead": [m for m, t in _DEAD.items() if t > time.time()],
+        "best": dict(_BEST),
         "quality": AI_QUALITY,
     }

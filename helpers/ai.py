@@ -25,7 +25,9 @@ from helpers.database import chat_logs
 from helpers.memory import get_memory
 
 _CACHE = {}
-_CACHE_TTL = 80
+_CACHE_TTL = 45
+CHAT_TIMEOUT = 8
+MAX_TRIES = 2
 
 
 def _providers():
@@ -56,10 +58,6 @@ def _providers():
     return items
 
 
-def _cache_key(messages):
-    return str(messages[-4:] if messages else [])
-
-
 def _headers(provider):
     return {
         "Authorization": f"Bearer {provider['key']}",
@@ -80,24 +78,17 @@ def _extract_text(data):
 
 
 def _post_chat(provider, model, messages):
-    extra = {}
-    low = model.lower()
-    max_tokens = AI_MAX_TOKENS
-    if any(x in low for x in ("gpt-5", "claude", "kimi", "gemini-3", "opus", "reason")):
-        max_tokens = max(AI_MAX_TOKENS, 400)
-        extra["reasoning_effort"] = "low"
     payload = {
         "model": model,
         "messages": messages,
-        "max_tokens": max_tokens,
+        "max_tokens": min(AI_MAX_TOKENS, 140),
         "temperature": AI_TEMPERATURE,
-        **extra,
     }
     r = requests.post(
         provider["url"],
         headers=_headers(provider),
         json=payload,
-        timeout=45,
+        timeout=CHAT_TIMEOUT,
     )
     data = r.json() if r.content else {}
     if r.status_code >= 400 or "choices" not in data:
@@ -109,20 +100,19 @@ def _post_chat(provider, model, messages):
 
 
 def safe_ai(messages: list) -> str:
-    refresh()
-    key = _cache_key(messages)
+    key = str(messages[-2:] if messages else [])
     hit = _CACHE.get(key)
     if hit and time.time() - hit[0] < _CACHE_TTL:
         return hit[1]
+
     last_err = None
     tried = 0
     for provider in _providers():
-        models = provider["chat_models"]()
-        for model in models[:12]:
+        for model in provider["chat_models"]()[:MAX_TRIES]:
             tried += 1
             try:
                 text = _post_chat(provider, model, messages)
-                mark_ok(model)
+                mark_ok(model, provider["name"])
                 _CACHE[key] = (time.time(), text)
                 print(f"AI OK: {provider['name']} / {model}")
                 return text
@@ -130,7 +120,10 @@ def safe_ai(messages: list) -> str:
                 last_err = e
                 mark_fail(model)
                 print("AI FAIL:", e)
-                continue
+                if tried >= MAX_TRIES:
+                    break
+        if tried >= MAX_TRIES:
+            break
     print("AI ALL FAILED after", tried, "tries:", last_err)
     return ""
 
@@ -141,29 +134,13 @@ async def safe_ai_async(messages: list) -> str:
 
 def get_fallback_reply(user_id: int, text: str, name: str) -> str:
     lower = text.lower()
-    memory = get_memory(user_id)
-    if memory:
-        for key, value in memory.items():
-            if key in lower or str(value).lower() in lower:
-                return f"{name}, haan yaad hai — {key}: {value}"
-    if any(w in lower for w in ["hi", "hello", "hey", "namaste", "hola"]):
+    if any(w in lower for w in ["hi", "hello", "hey", "namaste"]):
         return f"Hey {name}! Kaise ho?"
     if any(w in lower for w in ["kaise ho", "how are you", "kya haal"]):
         return f"Main theek hoon {name}, tum sunao."
-    if any(w in lower for w in ["bye", "alvida", "good night", "gn"]):
+    if any(w in lower for w in ["bye", "good night", "gn"]):
         return f"Bye {name}, take care."
-    if any(w in lower for w in ["thank", "shukriya", "thanks"]):
-        return f"Welcome {name}"
-    try:
-        last_chats = list(
-            chat_logs.find({"user_id": user_id, "role": "user"}).sort("time", -1).limit(5)
-        )
-        if last_chats:
-            last = (last_chats[0].get("text") or "")[:80]
-            return f"{name}, AI thodi busy hai. Last baat thi: {last}"
-    except Exception as e:
-        print("Fallback chat error:", e)
-    return f"{name}, abhi reply late ho raha hai, thodi der baad try karo."
+    return f"{name}, ek second ruk, phir se bhej do."
 
 
 def _find_image_url(obj):
@@ -194,63 +171,28 @@ def _find_image_url(obj):
     return None
 
 
-def _images_generations(provider, model, prompt):
-    r = requests.post(
-        provider["images_url"],
-        headers=_headers(provider),
-        json={"model": model, "prompt": prompt, "n": 1, "size": "1024x1024"},
-        timeout=90,
-    )
-    data = r.json() if r.content else {}
-    if r.status_code >= 400:
-        raise RuntimeError(data.get("error", data))
-    url = _find_image_url(data)
-    if not url:
-        raise RuntimeError("no image in generations response")
-    return url
-
-
-def _image_via_chat(provider, model, prompt):
-    r = requests.post(
-        provider["url"],
-        headers=_headers(provider),
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": f"Generate an image: {prompt}"}],
-            "max_tokens": 200,
-        },
-        timeout=90,
-    )
-    data = r.json() if r.content else {}
-    if r.status_code >= 400:
-        raise RuntimeError(data.get("error", data))
-    url = _find_image_url(data)
-    if not url:
-        raise RuntimeError("no image url in chat response")
-    return url
-
-
 def generate_image(prompt: str) -> str:
     last_err = None
     for provider in _providers():
-        for model in provider["image_models"]()[:8]:
+        for model in provider["image_models"]()[:2]:
             try:
-                url = _images_generations(provider, model, prompt)
-                mark_ok(model)
-                print(f"IMG OK generations: {provider['name']} / {model}")
-                return url
-            except Exception as e:
-                last_err = e
-                print("IMG generations FAIL:", e)
-            try:
-                url = _image_via_chat(provider, model, prompt)
-                mark_ok(model)
-                print(f"IMG OK chat: {provider['name']} / {model}")
+                r = requests.post(
+                    provider["images_url"],
+                    headers=_headers(provider),
+                    json={"model": model, "prompt": prompt, "n": 1, "size": "1024x1024"},
+                    timeout=25,
+                )
+                data = r.json() if r.content else {}
+                if r.status_code >= 400:
+                    raise RuntimeError(data.get("error", data))
+                url = _find_image_url(data)
+                if not url:
+                    raise RuntimeError("no image")
+                mark_ok(model, provider["name"])
                 return url
             except Exception as e:
                 last_err = e
                 mark_fail(model)
-                print("IMG chat FAIL:", e)
     raise RuntimeError(f"Image failed: {last_err}")
 
 
