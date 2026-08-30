@@ -1,122 +1,74 @@
 import requests
-from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler
+from telegram.ext import CommandHandler
 from config import OWNER_ID
-from helpers.clones import (
-    save_clone, get_user_clones, get_all_clones,
-    delete_clone, get_clone, get_clone_by_token
-)
+from helpers.clones import save_clone, get_user_clones, get_all_clones, delete_clone, get_clone, get_clone_by_token
 from helpers.decorators import is_owner
+from helpers.style import sc
 
 
-async def clone_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        user = update.effective_user
-        print(f"Clone command by {user.id}", flush=True)
-
-        if not context.args:
-            await update.message.reply_text(
-                "🤖 Clone Your Bot\n\n"
-                "Usage:\n"
-                "/clone your_bot_token\n\n"
-                "Example:\n"
-                "/clone 123456789:AAHxxxx..."
-            )
-            return
-
-        token = context.args[0].strip()
-        print(f"Token received: {token[:15]}...", flush=True)
-
-        # Verify token
-        r = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=10)
-        data = r.json()
-        print(f"Telegram response: {data}", flush=True)
-
-        if not data.get("ok"):
-            await update.message.reply_text("❌ Invalid Token. Sahi token bhejo.")
-            return
-
-        bot_info = data["result"]
-        bot_id = bot_info["id"]
-        bot_username = bot_info.get("username", "Unknown")
-        bot_name = bot_info.get("first_name", "Unknown")
-
-        # Already exists?
-        if get_clone_by_token(token):
-            await update.message.reply_text("⚠️ Yeh token pehle se cloned hai.")
-            return
-
-        # Save
-        save_clone(user.id, token, bot_username, bot_id, bot_name)
-        print("Clone saved successfully", flush=True)
-
-        await update.message.reply_text(
-            f"✅ Bot Cloned Successfully!\n\n"
-            f"Name: {bot_name}\n"
-            f"Username: @{bot_username}\n"
-            f"ID: {bot_id}"
-        )
-
-        # Notify owner
-        try:
-            await context.bot.send_message(
-                OWNER_ID,
-                f"🆕 New Clone\n\n"
-                f"User: {user.first_name} ({user.id})\n"
-                f"Bot: @{bot_username}"
-            )
-        except Exception as e:
-            print("Owner notify error:", e, flush=True)
-
-    except Exception as e:
-        print(f"Clone error: {e}", flush=True)
-        await update.message.reply_text(f"❌ Error: {e}")
-
-
-async def my_clones(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    clones_list = get_user_clones(update.effective_user.id)
-    if not clones_list:
-        return await update.message.reply_text("Aapka koi cloned bot nahi hai.")
-
-    text = "🤖 Aapke Cloned Bots:\n\n"
-    for i, c in enumerate(clones_list, 1):
-        text += f"{i}. @{c.get('bot_username')} — {c.get('bot_id')}\n"
-    await update.message.reply_text(text)
-
-
-async def all_clones(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_owner(update.effective_user.id):
-        return await update.message.reply_text("❌ Sirf Owner use kar sakta hai.")
-
-    clones_list = get_all_clones()
-    if not clones_list:
-        return await update.message.reply_text("Koi clone nahi hai.")
-
-    text = f"🤖 Total Clones: {len(clones_list)}\n\n"
-    for i, c in enumerate(clones_list, 1):
-        text += f"{i}. @{c.get('bot_username')} | Owner: {c.get('owner_id')}\n"
-    await update.message.reply_text(text)
-
-
-async def del_clone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def clone_command(update, context):
     if not context.args:
-        return await update.message.reply_text("Usage: /delclone bot_id")
+        return await update.message.reply_text(
+            f"🤖 <b>{sc('clone bot')}</b>\n\n"
+            f"1. @BotFather pe /newbot\n"
+            f"2. token yahan bhejo\n\n"
+            "<code>/clone 123456:AAHxxxx</code>",
+            parse_mode="HTML",
+        )
+    token = context.args[0].strip()
+    try:
+        data = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=8).json()
+    except Exception:
+        return await update.message.reply_text("Token check fail. Phir try karo.")
+    if not data.get("ok"):
+        return await update.message.reply_text("Invalid token.")
+    info = data["result"]
+    if get_clone_by_token(token):
+        return await update.message.reply_text("Yeh token pehle se cloned hai.")
+    save_clone(update.effective_user.id, token, info.get("username"), info["id"], info.get("first_name"))
+    await update.message.reply_text(
+        f"✦ {sc('cloned')}\n@{info.get('username')}\n<code>{info['id']}</code>",
+        parse_mode="HTML",
+    )
+    try:
+        await context.bot.send_message(
+            OWNER_ID,
+            f"New clone by {update.effective_user.id}\n@{info.get('username')}",
+        )
+    except Exception:
+        pass
 
+
+async def my_clones(update, context):
+    items = get_user_clones(update.effective_user.id)
+    if not items:
+        return await update.message.reply_text("Koi clone nahi. /clone TOKEN")
+    lines = [f"{i}. @{c.get('bot_username')}" for i, c in enumerate(items, 1)]
+    await update.message.reply_text("Clones\n" + "\n".join(lines))
+
+
+async def all_clones(update, context):
+    if not is_owner(update.effective_user.id):
+        return
+    items = get_all_clones()
+    await update.message.reply_text("Total clones: %s" % len(items))
+
+
+async def del_clone(update, context):
+    if not context.args:
+        return await update.message.reply_text("/delclone bot_id")
     try:
         bot_id = int(context.args[0])
-    except:
-        return await update.message.reply_text("❌ Invalid bot_id")
-
+    except ValueError:
+        return await update.message.reply_text("Invalid id")
     clone = get_clone(bot_id)
     if not clone:
-        return await update.message.reply_text("❌ Clone nahi mila.")
-
-    user_id = update.effective_user.id
-    if user_id != OWNER_ID and clone.get("owner_id") != user_id:
-        return await update.message.reply_text("❌ Aap is clone ko delete nahi kar sakte.")
-
+        return await update.message.reply_text("Clone nahi mila.")
+    uid = update.effective_user.id
+    if uid != OWNER_ID and clone.get("owner_id") != uid:
+        return await update.message.reply_text("Allowed nahi.")
     delete_clone(bot_id)
-    await update.message.reply_text(f"✅ Clone {bot_id} delete ho gaya.")
+    await update.message.reply_text("Clone delete.")
 
 
 def register(app):
@@ -124,4 +76,3 @@ def register(app):
     app.add_handler(CommandHandler("myclones", my_clones))
     app.add_handler(CommandHandler("clones", all_clones))
     app.add_handler(CommandHandler("delclone", del_clone))
-    print("✅ Clone module loaded", flush=True)

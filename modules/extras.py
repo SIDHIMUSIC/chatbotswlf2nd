@@ -17,9 +17,7 @@ def mode_kb():
             InlineKeyboardButton("BF vibe", callback_data="mode_bf"),
             InlineKeyboardButton("Waifu", callback_data="mode_waifu"),
         ],
-        [
-            InlineKeyboardButton("Pro AI", callback_data="mode_pro"),
-        ],
+        [InlineKeyboardButton("Pro AI", callback_data="mode_pro")],
         [
             InlineKeyboardButton("Hinglish", callback_data="lang_hinglish"),
             InlineKeyboardButton("Hindi", callback_data="lang_hi"),
@@ -29,13 +27,20 @@ def mode_kb():
     ])
 
 
+async def mode_cmd_send(message, user_id):
+    prefs = get_prefs(user_id)
+    await message.reply_text(
+        f"✦ {sc('choose vibe')}\nnow: <code>{prefs['mode']}</code> / <code>{prefs['lang']}</code>",
+        parse_mode="HTML",
+        reply_markup=mode_kb(),
+    )
+
+
 async def newchat_cmd(update, context):
     uid = update.effective_user.id
     cid = update.effective_chat.id
     chat_logs.delete_many({"user_id": uid, "chat_id": cid})
-    await update.message.reply_text(
-        f"✦ {sc('new chat unlocked')}\n{sc('purani baat reset ho gayi')}"
-    )
+    await update.message.reply_text(f"✦ {sc('new chat unlocked')}\n{sc('purani baat reset ho gayi')}")
 
 
 async def profile_cmd(update, context):
@@ -46,22 +51,16 @@ async def profile_cmd(update, context):
     mem_lines = "\n".join(f"• {k}: {v}" for k, v in list(mem.items())[:8]) or sc("abhi khaali")
     text = (
         f"👤 <b>{sc('profile')}</b>\n\n"
-        f"{sc('name')}: {user.first_name}\n"
         f"{sc('mode')}: <code>{prefs['mode']}</code>\n"
         f"{sc('lang')}: <code>{prefs['lang']}</code>\n"
-        f"{sc('seen')}: <code>{int(doc.get('last_seen') or 0)}</code>\n\n"
+        f"{sc('streak')}: <code>{doc.get('checkin_streak') or 0}</code>\n\n"
         f"{sc('memory')}\n{mem_lines}"
     )
     await update.message.reply_text(text, parse_mode="HTML", reply_markup=mode_kb())
 
 
 async def mode_cmd(update, context):
-    prefs = get_prefs(update.effective_user.id)
-    await update.message.reply_text(
-        f"✦ {sc('choose vibe')}\nnow: <code>{prefs['mode']}</code> / <code>{prefs['lang']}</code>",
-        parse_mode="HTML",
-        reply_markup=mode_kb(),
-    )
+    await mode_cmd_send(update.message, update.effective_user.id)
 
 
 async def mode_callback(update, context):
@@ -73,11 +72,8 @@ async def mode_callback(update, context):
         mode = data.split("_", 1)[1]
         if mode in MODES:
             set_pref(uid, mode=mode)
-            await query.answer(f"Mode: {mode}", show_alert=True)
     elif data.startswith("lang_"):
-        lang = data.split("_", 1)[1]
-        set_pref(uid, lang=lang)
-        await query.answer(f"Lang: {lang}", show_alert=True)
+        set_pref(uid, lang=data.split("_", 1)[1])
     prefs = get_prefs(uid)
     try:
         await query.edit_message_text(
