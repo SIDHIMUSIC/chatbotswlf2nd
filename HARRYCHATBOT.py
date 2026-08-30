@@ -1,10 +1,11 @@
-"""HARRY CHATBOT — modular Telegram AI."""
+"""HARRY CHATBOT — modular Telegram AI + live clones."""
 import traceback
 from telegram import BotCommand
 from telegram.ext import ApplicationBuilder, ContextTypes
 
 from config import TOKEN, OWNER_ID, LOG_GROUP_ID
 from utils.auto_loader import load_modules, load_tools
+from helpers.clone_runtime import start_saved_clones, UPDATES
 
 
 async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
@@ -13,18 +14,13 @@ async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
     )
     try:
         if update and getattr(update, "effective_message", None):
-            await update.effective_message.reply_text("Thodi dikkat aa gayi. Owner ko report chali.")
+            await update.effective_message.reply_text("Thodi dikkat aa gayi.")
     except Exception:
         pass
     try:
         await context.bot.send_message(OWNER_ID, f"ERROR\n{error_text[:3500]}")
     except Exception as e:
         print("OWNER DM FAILED:", e)
-    if LOG_GROUP_ID:
-        try:
-            await context.bot.send_message(LOG_GROUP_ID, f"ERROR\n{error_text[:3500]}")
-        except Exception as e:
-            print("LOG GROUP FAILED:", e)
     print(error_text)
 
 
@@ -34,9 +30,9 @@ async def _post_init(application):
             BotCommand("start", "Open home panel"),
             BotCommand("help", "Command guide"),
             BotCommand("image", "Generate AI image"),
+            BotCommand("clone", "Clone a bot token"),
+            BotCommand("checkin", "Daily check-in"),
             BotCommand("ping", "Speed check"),
-            BotCommand("id", "Show IDs"),
-            BotCommand("owner", "Creator card"),
         ])
     except Exception as e:
         print("set commands skip:", e)
@@ -45,12 +41,19 @@ async def _post_init(application):
         refresh()
     except Exception as e:
         print("catalog warmup skip:", e)
+    started, failed = [], []
+    try:
+        started, failed = await start_saved_clones()
+    except Exception as e:
+        print("clone boot fail:", e)
     try:
         me = await application.bot.get_me()
-        text = f"Online: {me.first_name} (@{me.username})\nNara + OpenRouter ready."
+        text = (
+            f"Online: {me.first_name} (@{me.username})\n"
+            f"Clones live: {len(started)}\n"
+            + ("Failed: " + "; ".join(failed[:5]) if failed else "Nara + OpenRouter ready.")
+        )
         await application.bot.send_message(OWNER_ID, text)
-        if LOG_GROUP_ID:
-            await application.bot.send_message(LOG_GROUP_ID, text)
     except Exception as e:
         print("Startup notify skip:", e)
 
@@ -69,11 +72,7 @@ def main():
     print("HARRY online")
     app.run_polling(
         drop_pending_updates=True,
-        allowed_updates=[
-            "message", "edited_message", "callback_query", "inline_query",
-            "business_connection", "business_message", "edited_business_message",
-            "deleted_business_messages",
-        ],
+        allowed_updates=UPDATES,
         close_loop=False,
     )
 

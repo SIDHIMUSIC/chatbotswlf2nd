@@ -1,12 +1,10 @@
 import time
 import asyncio
 import random
-from datetime import datetime
 
-import pytz
 from telegram.ext import MessageHandler, filters
 
-from config import BOT_USERNAME, BOT_NICKNAMES, STICKERS
+from config import BOT_NICKNAMES, STICKERS
 from helpers import (
     safe_ai_async,
     get_fallback_reply,
@@ -71,13 +69,14 @@ async def chat(update, context):
     name = user.first_name or "Friend"
     if is_bot_banned(user.id):
         return
+    bot_username = (context.bot.username or "").lower()
     if update.effective_chat.type != "private":
-        mentioned = "@%s" % BOT_USERNAME.lower() in lower_text
+        mentioned = f"@{bot_username}" in lower_text if bot_username else False
         nickname_called = any(nick in lower_text for nick in BOT_NICKNAMES)
         replied_to_bot = (
             update.message.reply_to_message
             and update.message.reply_to_message.from_user
-            and update.message.reply_to_message.from_user.is_bot
+            and update.message.reply_to_message.from_user.id == context.bot.id
         )
         if not mentioned and not nickname_called and not replied_to_bot:
             return
@@ -94,7 +93,7 @@ async def chat(update, context):
         if (
             update.message.reply_to_message
             and update.message.reply_to_message.from_user
-            and update.message.reply_to_message.from_user.is_bot
+            and update.message.reply_to_message.from_user.id == context.bot.id
         ):
             original = update.message.reply_to_message.text or ""
             if original and text:
