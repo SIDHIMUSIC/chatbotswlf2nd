@@ -1,8 +1,4 @@
-"""
-HARRY CHATBOT — Professional Modular Architecture
-Made with ❤️ by Harry (@SANATANI_BACHA)
-"""
-
+"""HARRY CHATBOT — modular Telegram AI."""
 import traceback
 from telegram.ext import ApplicationBuilder, ContextTypes
 
@@ -10,61 +6,61 @@ from config import TOKEN, OWNER_ID, LOG_GROUP_ID
 from utils.auto_loader import load_modules, load_tools
 
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
     error_text = "".join(
-        __import__("traceback").format_exception(None, context.error, context.error.__traceback__)
+        traceback.format_exception(None, context.error, context.error.__traceback__)
     )
     try:
         if update and getattr(update, "effective_message", None):
-            await update.effective_message.reply_text(
-                "❌ Bot me thodi dikkat aa gayi hai\nOwner ko report bhej di gayi hai 🙂"
-            )
+            await update.effective_message.reply_text("Thodi dikkat aa gayi. Owner ko report chali.")
     except Exception:
         pass
     try:
-        await context.bot.send_message(chat_id=OWNER_ID, text=f"🚨 BOT ERROR (PRIVATE)\n\n{error_text[:3500]}")
+        await context.bot.send_message(OWNER_ID, f"ERROR\n{error_text[:3500]}")
     except Exception as e:
         print("OWNER DM FAILED:", e)
-    try:
-        if LOG_GROUP_ID:
-            await context.bot.send_message(chat_id=LOG_GROUP_ID, text=f"🚨 BOT ERROR\n\n{error_text[:3500]}")
-    except Exception as e:
-        print("LOG GROUP FAILED:", e)
-    print("BOT ERROR:\n", error_text)
+    if LOG_GROUP_ID:
+        try:
+            await context.bot.send_message(LOG_GROUP_ID, f"ERROR\n{error_text[:3500]}")
+        except Exception as e:
+            print("LOG GROUP FAILED:", e)
+    print(error_text)
 
 
 async def _post_init(application):
     try:
+        from helpers.catalog import refresh
+        refresh()
+    except Exception as e:
+        print("catalog warmup skip:", e)
+    try:
         me = await application.bot.get_me()
         text = (
-            f"🟢 Bot Successfully Started!\n\n"
-            f"🤖 Name: {me.first_name}\n"
-            f"👤 Username: @{me.username}\n"
-            f"🆔 Bot ID: {me.id}\n"
-            f"👑 Owner: {OWNER_ID}\n\n"
-            f"✅ NaraRouter + OpenRouter ready."
+            f"Online: {me.first_name} (@{me.username})\n"
+            f"ID: {me.id}\nOwner: {OWNER_ID}\n"
+            "NaraRouter + OpenRouter ready."
         )
-        try:
-            await application.bot.send_message(chat_id=OWNER_ID, text=text)
-        except Exception as e:
-            print("Owner DM failed:", e)
+        await application.bot.send_message(OWNER_ID, text)
         if LOG_GROUP_ID:
-            try:
-                await application.bot.send_message(chat_id=LOG_GROUP_ID, text=text)
-            except Exception as e:
-                print("Log Group failed:", e)
+            await application.bot.send_message(LOG_GROUP_ID, text)
     except Exception as e:
-        print("Startup notification failed:", e)
+        print("Startup notify skip:", e)
 
 
 def main():
-    app = ApplicationBuilder().token(TOKEN).post_init(_post_init).build()
-    print("\n🔄 Loading modules...")
+    app = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .concurrent_updates(True)
+        .post_init(_post_init)
+        .build()
+    )
+    print("Loading modules...")
     load_modules(app)
-    print("\n🔄 Loading tools...")
+    print("Loading tools...")
     load_tools(app)
     app.add_error_handler(error_handler)
-    print("HARRY AI CHATBOT (Modular) online")
+    print("HARRY online")
     app.run_polling(
         drop_pending_updates=True,
         allowed_updates=[

@@ -1,7 +1,13 @@
 from pymongo import MongoClient
 from config import MONGO_URI
 
-db = MongoClient(MONGO_URI)["telegram_bot"]
+client = MongoClient(
+    MONGO_URI,
+    serverSelectionTimeoutMS=4000,
+    connectTimeoutMS=4000,
+    socketTimeoutMS=6000,
+)
+db = client["telegram_bot"]
 
 users = db.users
 bot_bans = db.bot_bans

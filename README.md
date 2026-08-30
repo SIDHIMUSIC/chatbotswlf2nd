@@ -1,25 +1,26 @@
-# 👑 HARRY CHATBOT
+# HARRY CHATBOT
 
-> Professional Modular Telegram AI Bot  
-> Made with ❤️ by **Harry** ([@SANATANI_BACHA](https://t.me/SANATANI_BACHA))
-
-NaraRouter primary + OpenRouter backup. Live model pool from `router.bynara.id/api/plans`.
+Modular Telegram AI bot. NaraRouter primary + OpenRouter backup.
 
 ## Deploy
-
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SIDHIMUSIC/chatbotswlf2nd)
 
-Required ENV: `TELEGRAM_BOT_TOKEN`, `MONGODB_URI`, `OWNER_ID`, plus `NARA_API_KEY` and/or `OPENROUTER_API_KEY`.
+ENV required: `TELEGRAM_BOT_TOKEN`, `MONGODB_URI`, `OWNER_ID`  
+Plus `NARA_API_KEY` and/or `OPENROUTER_API_KEY`.
 
-Optional: `NARA_BASE_URL=https://router.bynara.id/v1`, `AI_QUALITY=balanced`, `AI_MAX_TOKENS=180`
+```
+NARA_BASE_URL=https://router.bynara.id/v1
+AI_QUALITY=balanced
+AI_MAX_TOKENS=140
+```
 
 ## Commands
-- Chat: just message (group me mention/nickname)
-- `/image prompt` — AI image
-- `/models` `/refreshmodels` — owner model pool
-- `yaad rakh naam: Ashu` — memory
+- `/start` cinematic boot + home
+- chat in private / mention in group
+- `/image prompt`
+- `/ping` `/help` `/id` `/owner`
+- owner: `/stats` `/models` `/refreshmodels` `/broadcast`
 
-## Run
 ```bash
 pip install -r requirements.txt
 cp .env.example .env

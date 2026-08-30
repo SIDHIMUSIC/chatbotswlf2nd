@@ -2,126 +2,103 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from helpers.decorators import is_owner
 
-HELP_HOME = (
-    "📚 <b>HELP CENTER</b>\n\n"
-    "Select a category below."
-)
+LINE = "<code>━━━━━━━━━━━━━━━━━━━━━━</code>"
 
-HELP_TEXT = (
-    "🤖 <b>BOT FULL FUNCTION LIST</b>\n"
-    "━━━━━━━━━━━━━━━━━━\n\n"
-    "<b>Basic Commands</b>\n"
-    "/start – Bot start\n"
-    "/help – All functions\n"
-    "/id – User & Chat ID\n"
-    "/language – Hindi / English\n\n"
-    "<b>AI Image</b>\n"
-    "/image &lt;prompt&gt; – AI Image\n\n"
-    "<b>Auto Replies</b>\n"
-    "• joke / funny → Joke\n"
-    "• shayari / love / sad → Shayari\n"
-    "• GM / GN → Auto Reply\n\n"
-    "<b>Admin</b>\n"
-    "/ban  /unban\n\n"
-    "<b>👑 Owner Commands</b>\n"
-    "/save /mycodes /suggest /commit\n"
-    "/botban /botunban /stats /broadcast\n"
-)
+PAGES = {
+    "help_home": (
+        "📚 <b>COMMAND GUIDE</b>\n"
+        f"{LINE}\n\n"
+        "Pick a section. Everything below works in private.\n"
+        "Groups me bot ko reply ya naam se call karo."
+    ),
+    "help_basic": (
+        "📌 <b>BASIC</b>\n"
+        f"{LINE}\n\n"
+        "/start — home panel\n"
+        "/help — this guide\n"
+        "/ping — speed check\n"
+        "/id — user & chat id\n"
+        "/owner — creator card"
+    ),
+    "help_chat": (
+        "💬 <b>CHAT</b>\n"
+        f"{LINE}\n\n"
+        "Seedha message bhejo.\n"
+        "<code>yaad rakh city: Patna</code>\n"
+        "joke / shayari likho to mood change.\n\n"
+        "AI NaraRouter pe chalti hai, OpenRouter backup."
+    ),
+    "help_image": (
+        "🖼 <b>IMAGE</b>\n"
+        f"{LINE}\n\n"
+        "<code>/image cyberpunk indian boy 4k</code>\n"
+        "<code>/image lord krishna digital art</code>"
+    ),
+    "help_owner": (
+        "👑 <b>OWNER</b>\n"
+        f"{LINE}\n\n"
+        "/stats /broadcast /models\n"
+        "/refreshmodels /pestatus\n"
+        "/botban /botunban"
+    ),
+}
+
+
+def nav(extra=None):
+    rows = [
+        [
+            InlineKeyboardButton("Basic", callback_data="help_basic"),
+            InlineKeyboardButton("Chat", callback_data="help_chat"),
+        ],
+        [
+            InlineKeyboardButton("Image", callback_data="help_image"),
+            InlineKeyboardButton("Owner", callback_data="help_owner"),
+        ],
+        [
+            InlineKeyboardButton("➡ Home", callback_data="home"),
+            InlineKeyboardButton("Close", callback_data="help_close"),
+        ],
+    ]
+    if extra:
+        rows.insert(0, extra)
+    return InlineKeyboardMarkup(rows)
+
+
+async def _show(query_or_msg, key, is_query=False):
+    text = PAGES.get(key, PAGES["help_home"])
+    kb = nav()
+    if is_query:
+        try:
+            await query_or_msg.edit_message_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
+            return
+        except Exception:
+            try:
+                await query_or_msg.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=kb)
+                return
+            except Exception:
+                target = query_or_msg.message
+    else:
+        target = query_or_msg
+    await target.reply_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
 
 
 async def help_cmd(update, context):
-    buttons = [
-        [
-            InlineKeyboardButton("📌 Basic", callback_data="help_basic"),
-            InlineKeyboardButton("🖼 AI Image", callback_data="help_image"),
-        ],
-        [
-            InlineKeyboardButton("🤖 Auto", callback_data="help_auto"),
-            InlineKeyboardButton("🛡 Admin", callback_data="help_admin"),
-        ],
-    ]
-    if is_owner(update.effective_user.id):
-        buttons.append([InlineKeyboardButton("👑 Owner", callback_data="help_owner")])
-    buttons.append([InlineKeyboardButton("❌ Close", callback_data="help_close")])
-    keyboard = InlineKeyboardMarkup(buttons)
-
-    target = update.callback_query.message if update.callback_query else update.message
-    await target.reply_text(
-        HELP_TEXT, parse_mode="HTML", reply_markup=keyboard, disable_web_page_preview=True
-    )
+    await _show(update.message, "help_home")
 
 
 async def help_callback(update, context):
     query = update.callback_query
     await query.answer()
     data = query.data
-
-    if data == "help_home":
-        text = HELP_HOME
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("📌 Basic", callback_data="help_basic"),
-                InlineKeyboardButton("🖼 AI Image", callback_data="help_image"),
-            ],
-            [
-                InlineKeyboardButton("🤖 Auto", callback_data="help_auto"),
-                InlineKeyboardButton("🛡 Admin", callback_data="help_admin"),
-            ],
-            [InlineKeyboardButton("👑 Owner", callback_data="help_owner")],
-            [
-                InlineKeyboardButton("🏠 Home", callback_data="home"),
-                InlineKeyboardButton("❌ Close", callback_data="help_close"),
-            ],
-        ])
-    elif data == "help_basic":
-        text = "<b>📌 BASIC COMMANDS</b>\n\n/start\n/help\n/id\n/language"
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅ Back", callback_data="help_home"),
-            InlineKeyboardButton("❌ Close", callback_data="help_close"),
-        ]])
-    elif data == "help_image":
-        text = "<b>🖼 AI IMAGE</b>\n\n/image prompt"
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅ Back", callback_data="help_home"),
-            InlineKeyboardButton("❌ Close", callback_data="help_close"),
-        ]])
-    elif data == "help_auto":
-        text = "<b>🤖 AUTO FEATURES</b>\n\n• Joke\n• Shayari\n• Good Morning\n• Memory\n• Auto Reply"
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅ Back", callback_data="help_home"),
-            InlineKeyboardButton("❌ Close", callback_data="help_close"),
-        ]])
-    elif data == "help_admin":
-        text = "<b>🛡 ADMIN</b>\n\n/ban\n/unban\n/addbadword\n/removebadword"
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅ Back", callback_data="help_home"),
-            InlineKeyboardButton("❌ Close", callback_data="help_close"),
-        ]])
-    elif data == "help_owner":
-        if not is_owner(query.from_user.id):
-            return await query.answer("Owner Only", show_alert=True)
-        text = (
-            "<b>👑 OWNER COMMANDS</b>\n\n"
-            "/save /mycodes /delcode /clearcodes\n"
-            "/suggest /commit /rollback\n"
-            "/broadcast /stats /botban /botunban"
-        )
-        keyboard = InlineKeyboardMarkup([[
-            InlineKeyboardButton("⬅ Back", callback_data="help_home"),
-            InlineKeyboardButton("❌ Close", callback_data="help_close"),
-        ]])
-    elif data == "help_close":
-        await query.message.delete()
+    if data == "help_close":
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
         return
-    else:
-        return
-
-    try:
-        await query.edit_message_caption(caption=text, parse_mode="HTML", reply_markup=keyboard)
-    except Exception:
-        await query.message.reply_text(
-            text, parse_mode="HTML", reply_markup=keyboard, disable_web_page_preview=True
-        )
+    if data == "help_owner" and not is_owner(query.from_user.id):
+        return await query.answer("Owner only.", show_alert=True)
+    await _show(query, data if data in PAGES else "help_home", is_query=True)
 
 
 def register(app):
