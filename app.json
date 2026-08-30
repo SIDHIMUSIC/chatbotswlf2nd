@@ -1,6 +1,6 @@
 {
   "name": "HARRY CHATBOT",
-  "description": "Professional Modular Telegram AI Chatbot by Harry",
+  "description": "Modular Telegram AI chatbot — NaraRouter + OpenRouter backup",
   "repository": "https://github.com/SIDHIMUSIC/chatbotswlf2nd",
   "logo": "https://graph.org/file/705cda02e63f4cb0bdb90-ce4d0ddd3a8cf38b5a.jpg",
   "keywords": ["telegram", "bot", "ai", "chatbot", "python"],
@@ -9,34 +9,45 @@
       "description": "Telegram Bot Token from @BotFather",
       "required": true
     },
-    "OPENROUTER_API_KEY": {
-      "description": "OpenRouter API Key",
-      "required": true
-    },
     "MONGODB_URI": {
       "description": "MongoDB Connection URI",
       "required": true
-      "value": "mongodb+srv://harryashutosh729:harryashutosh729@harry2.xykka.mongodb.net/?retryWrites=true&w=majority&appName=harry2"
     },
     "OWNER_ID": {
       "description": "Owner Telegram User ID",
       "required": true
-      "value": "8170572505"
+    },
+    "NARA_API_KEY": {
+      "description": "NaraRouter API key from router.bynara.id",
+      "required": false
+    },
+    "NARA_BASE_URL": {
+      "description": "NaraRouter base URL",
+      "required": false,
+      "value": "https://router.bynara.id/v1"
+    },
+    "OPENROUTER_API_KEY": {
+      "description": "OpenRouter backup API key",
+      "required": false
+    },
+    "AI_QUALITY": {
+      "description": "free | balanced | high",
+      "required": false,
+      "value": "balanced"
+    },
+    "AI_MAX_TOKENS": {
+      "description": "Max reply tokens",
+      "required": false,
+      "value": "180"
     },
     "LOG_GROUP_ID": {
       "description": "Log Group ID (optional)",
-      "required": false,
-      "value": "-1003389276372"
+      "required": false
     },
     "SUPPORT_CHANNEL": {
       "description": "Support Channel URL",
       "required": false,
       "value": "https://t.me/TG_BIO_STYLE"
-    },
-    "AI_MODEL": {
-      "description": "AI Model name",
-      "required": false,
-      "value": "deepseek/deepseek-chat"
     }
   },
   "formation": {
