@@ -1,5 +1,6 @@
 """HARRY CHATBOT — modular Telegram AI."""
 import traceback
+from telegram import BotCommand
 from telegram.ext import ApplicationBuilder, ContextTypes
 
 from config import TOKEN, OWNER_ID, LOG_GROUP_ID
@@ -29,17 +30,24 @@ async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _post_init(application):
     try:
+        await application.bot.set_my_commands([
+            BotCommand("start", "Open home panel"),
+            BotCommand("help", "Command guide"),
+            BotCommand("image", "Generate AI image"),
+            BotCommand("ping", "Speed check"),
+            BotCommand("id", "Show IDs"),
+            BotCommand("owner", "Creator card"),
+        ])
+    except Exception as e:
+        print("set commands skip:", e)
+    try:
         from helpers.catalog import refresh
         refresh()
     except Exception as e:
         print("catalog warmup skip:", e)
     try:
         me = await application.bot.get_me()
-        text = (
-            f"Online: {me.first_name} (@{me.username})\n"
-            f"ID: {me.id}\nOwner: {OWNER_ID}\n"
-            "NaraRouter + OpenRouter ready."
-        )
+        text = f"Online: {me.first_name} (@{me.username})\nNara + OpenRouter ready."
         await application.bot.send_message(OWNER_ID, text)
         if LOG_GROUP_ID:
             await application.bot.send_message(LOG_GROUP_ID, text)
@@ -55,9 +63,7 @@ def main():
         .post_init(_post_init)
         .build()
     )
-    print("Loading modules...")
     load_modules(app)
-    print("Loading tools...")
     load_tools(app)
     app.add_error_handler(error_handler)
     print("HARRY online")
