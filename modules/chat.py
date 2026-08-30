@@ -2,13 +2,19 @@ import time
 import asyncio
 import random
 from datetime import datetime
+
 import pytz
-from telegram import Update
-from telegram.ext import ContextTypes, MessageHandler, filters
+from telegram.ext import MessageHandler, filters
+
 from config import BOT_USERNAME, BOT_NICKNAMES, STICKERS
 from helpers import (
-    safe_ai, get_fallback_reply, get_memory,
-    is_bot_banned, users, chat_logs
+    safe_ai_async,
+    get_fallback_reply,
+    get_memory,
+    set_memory,
+    is_bot_banned,
+    users,
+    chat_logs,
 )
 
 try:
@@ -22,45 +28,81 @@ try:
 except ImportError:
     def save_learned_reply(*args, **kwargs):
         pass
+
     def get_learned_reply(*args, **kwargs):
         return None
 
 
-async def chatgpt_typing(update, context, text):
-    chat_id = update.effective_chat.id
-    await context.bot.send_chat_action(chat_id, "typing")
-    await asyncio.sleep(0.3)
-    await update.message.reply_text(
-        text,
-        parse_mode="Markdown",
-        reply_to_message_id=update.message.message_id,
+def _system_prompt(name, memory):
+    mem = ""
+    if memory:
+        bits = ["- %s: %s" % (k, v) for k, v in list(memory.items())[:6]]
+        mem = "\nYaadein:\n" + "\n".join(bits)
+    extra = get_bot_extras(name) or ""
+    return (
+        "Tu Harry hai, Telegram pe close Hinglish dost.\n"
+        "User ka naam: %s.\n"
+        "1 se 4 line me natural reply de. Robotic mat ban.\n"
+        "Har line pe emoji mat pel. AI/model/API ka naam mat le.\n"
+        "Shayari/joke tabhi jab user maange.\n"
+        "%s%s" % (name, extra, mem)
     )
 
 
-async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def build_history(user_id, chat_id):
+    rows = list(
+        chat_logs.find({"user_id": user_id, "chat_id": chat_id}).sort("time", -1).limit(12)
+    )
+    rows.reverse()
+    out = []
+    for row in rows:
+        role = row.get("role") if row.get("role") in ("user", "assistant") else "user"
+        msg = (row.get("text") or "").strip()[:280]
+        if msg:
+            out.append({"role": role, "content": msg})
+    return out
+
+
+def _maybe_remember(user_id, text):
+    lower = text.lower()
+    if lower.startswith("/remember ") or lower.startswith("yaad rakh "):
+        body = text.split(" ", 1)[-1]
+        if ":" in body:
+            key, val = body.split(":", 1)
+        elif "=" in body:
+            key, val = body.split("=", 1)
+        else:
+            key, val = "note", body
+        set_memory(user_id, key, val)
+        return True
+    return False
+
+
+async def chatgpt_typing(update, context, text):
+    await context.bot.send_chat_action(update.effective_chat.id, "typing")
+    await asyncio.sleep(0.25)
+    await update.message.reply_text(text, reply_to_message_id=update.message.message_id)
+
+
+async def chat(update, context):
     if not update.message or not update.message.text:
         return
-
     user = update.effective_user
-    text = update.message.text
+    text = update.message.text.strip()
     lower_text = text.lower()
-
+    chat_id = update.effective_chat.id
+    name = user.first_name or "Friend"
     tz = pytz.timezone("Asia/Kolkata")
     now = datetime.now(tz)
-    REAL_DATE = now.strftime("%d %B %Y")
-    REAL_DAY = now.strftime("%A")
-
-    if "date" in lower_text:
+    if "date" in lower_text and len(lower_text) < 20:
         await update.message.reply_text(
-            f"📅 Aaj ki date hai {REAL_DATE}\n📆 Aaj {REAL_DAY} hai 😊"
+            "Aaj %s, %s hai." % (now.strftime("%d %B %Y"), now.strftime("%A"))
         )
         return
-
     if is_bot_banned(user.id):
         return
-
     if update.effective_chat.type != "private":
-        mentioned = f"@{BOT_USERNAME.lower()}" in lower_text
+        mentioned = "@%s" % BOT_USERNAME.lower() in lower_text
         nickname_called = any(nick in lower_text for nick in BOT_NICKNAMES)
         replied_to_bot = (
             update.message.reply_to_message
@@ -69,106 +111,79 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         if not mentioned and not nickname_called and not replied_to_bot:
             return
-
     users.update_one(
         {"user_id": user.id},
-        {"$set": {
-            "first_name": user.first_name,
-            "username": user.username,
-            "last_seen": time.time(),
-        }},
+        {"$set": {"first_name": user.first_name, "username": user.username, "last_seen": time.time()}},
         upsert=True,
     )
-
-    # ========== LEARNING: Save user reply ==========
+    if _maybe_remember(user.id, text):
+        await update.message.reply_text("Theek, yaad rakh liya.")
+        return
     try:
-        if (update.message.reply_to_message 
-            and update.message.reply_to_message.from_user 
-            and update.message.reply_to_message.from_user.is_bot):
-            
+        if (
+            update.message.reply_to_message
+            and update.message.reply_to_message.from_user
+            and update.message.reply_to_message.from_user.is_bot
+        ):
             original = update.message.reply_to_message.text or ""
             if original and text:
                 save_learned_reply(original, text, user.id)
     except Exception as e:
         print("Learning save error:", e)
-
-    # ========== REPLY GENERATION ==========
+    chat_logs.insert_one({
+        "user_id": user.id,
+        "chat_id": chat_id,
+        "chat_type": update.effective_chat.type,
+        "role": "user",
+        "text": text[:500],
+        "time": time.time(),
+    })
     if "joke" in lower_text or "funny" in lower_text:
-        system = "Tell me a Hinglish joke with emojis."
-    elif "shayari" in lower_text or "love" in lower_text or "sad" in lower_text:
-        system = (
-            "Write a beautiful 8 to 10 line Hindi shayari, "
-            "deep emotional, poetic, with emojis."
-        )
+        style = "Ek short Hinglish joke sunao."
+    elif "shayari" in lower_text:
+        style = "Chhoti si Hindi shayari likho, 4-6 line."
     else:
-        system = "Reply shortly in Hinglish with emojis."
-
-    system += f"\n\n👤 User Info:\nName: {user.first_name}"
-    system += get_bot_extras(user.first_name)
-
-    user_memory = get_memory(user.id)
-    if user_memory:
-        system += "\n\n🧠 SAVED MEMORY:\n"
-        for key, value in user_memory.items():
-            system += f"- {key}: {value}\n"
-
-    system += "\n(Instructions: User ke naam aur memory ka use karke friendly reply karo)"
-    system += "\n\nImportant: Har reply me 2-4 relevant emojis zaroor use karo. Friendly aur expressive raho."
-
-    # Pehle learned reply try karo (30% chance)
+        style = "Normal dosti wali baat kar."
+    messages = [{"role": "system", "content": _system_prompt(name, get_memory(user.id))}]
+    messages.extend(build_history(user.id, chat_id))
+    messages.append({"role": "user", "content": "%s\n\n%s" % (style, text)})
     reply = None
     try:
         learned = get_learned_reply(text)
-        if learned and random.random() < 0.3:
+        if learned and random.random() < 0.12:
             reply = learned
     except Exception:
         pass
-
     if not reply:
-        reply = safe_ai([
-            {"role": "system", "content": system},
-            {"role": "user", "content": text},
-        ])
-
-    if "dikkat aa rahi hai" in reply or "AI busy" in reply or "try karo" in reply:
-        reply = get_fallback_reply(user.id, text, user.first_name or "Friend")
-
-    if len(reply) > 4000:
-        reply = reply[:4000]
-
-    name = user.first_name or "Friend"
-    final_reply = f"*{name}*,\n{reply.strip()}"
-
-    await chatgpt_typing(update, context, final_reply)
-
-    # Sticker logic
+        reply = await safe_ai_async(messages)
+    if not reply or any(x in reply.lower() for x in ["dikkat aa", "ai busy", "try karo"]):
+        reply = get_fallback_reply(user.id, text, name)
+    reply = reply.strip()[:3500]
+    await chatgpt_typing(update, context, reply)
     try:
         sticker_to_send = None
-        lower = text.lower()
-        if any(w in lower for w in ["love", "pyar", "miss", "dil"]):
+        if any(w in lower_text for w in ["love", "pyar", "miss", "dil"]):
             sticker_to_send = STICKERS.get("love")
-        elif any(w in lower for w in ["haha", "lol", "haso", "funny", "joke"]):
+        elif any(w in lower_text for w in ["haha", "lol", "haso", "funny", "joke"]):
             sticker_to_send = STICKERS.get("laugh")
-        elif any(w in lower for w in ["cool", "mast", "fire", "op"]):
+        elif any(w in lower_text for w in ["cool", "mast", "fire", "op"]):
             sticker_to_send = STICKERS.get("cool")
-        elif any(w in lower for w in ["sad", "dukhi", "rona", "cry"]):
+        elif any(w in lower_text for w in ["sad", "dukhi", "rona", "cry"]):
             sticker_to_send = STICKERS.get("sad")
-        elif any(w in lower for w in ["hi", "hello", "hey", "namaste"]):
+        elif any(w in lower_text for w in ["hi", "hello", "hey", "namaste"]):
             sticker_to_send = STICKERS.get("hi")
-        elif any(w in lower for w in ["kiss", "chumma", "muah"]):
+        elif any(w in lower_text for w in ["kiss", "chumma", "muah"]):
             sticker_to_send = STICKERS.get("kiss")
-
         if sticker_to_send:
-            await context.bot.send_sticker(
-                chat_id=update.effective_chat.id,
-                sticker=sticker_to_send,
-            )
+            await context.bot.send_sticker(chat_id=chat_id, sticker=sticker_to_send)
     except Exception as e:
         print("Sticker error:", e)
-
     chat_logs.insert_one({
         "user_id": user.id,
-        "text": final_reply,
+        "chat_id": chat_id,
+        "chat_type": update.effective_chat.type,
+        "role": "assistant",
+        "text": reply[:500],
         "time": time.time(),
     })
 
