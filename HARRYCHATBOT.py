@@ -4,126 +4,72 @@ Made with ❤️ by Harry (@SANATANI_BACHA)
 """
 
 import traceback
-import asyncio
-from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes
 
 from config import TOKEN, OWNER_ID, LOG_GROUP_ID
 from utils.auto_loader import load_modules, load_tools
 
 
-# ================= GLOBAL ERROR HANDLER =================
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     error_text = "".join(
-        traceback.format_exception(None, context.error, context.error.__traceback__)
+        __import__("traceback").format_exception(None, context.error, context.error.__traceback__)
     )
-
     try:
         if update and getattr(update, "effective_message", None):
             await update.effective_message.reply_text(
-                "❌ Bot me thodi dikkat aa gayi hai\n"
-                "Owner ko report bhej di gayi hai 🙂"
+                "❌ Bot me thodi dikkat aa gayi hai\nOwner ko report bhej di gayi hai 🙂"
             )
     except Exception:
         pass
-
     try:
-        await context.bot.send_message(
-            chat_id=OWNER_ID,
-            text=f"🚨 BOT ERROR (PRIVATE)\n\n{error_text[:3500]}"
-        )
+        await context.bot.send_message(chat_id=OWNER_ID, text=f"🚨 BOT ERROR (PRIVATE)\n\n{error_text[:3500]}")
     except Exception as e:
         print("OWNER DM FAILED:", e)
-
     try:
         if LOG_GROUP_ID:
-            await context.bot.send_message(
-                chat_id=LOG_GROUP_ID,
-                text=f"🚨 BOT ERROR\n\n{error_text[:3500]}"
-            )
+            await context.bot.send_message(chat_id=LOG_GROUP_ID, text=f"🚨 BOT ERROR\n\n{error_text[:3500]}")
     except Exception as e:
         print("LOG GROUP FAILED:", e)
-
     print("BOT ERROR:\n", error_text)
 
 
-# ================= MAIN =================
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+async def _post_init(application):
+    try:
+        me = await application.bot.get_me()
+        text = (
+            f"🟢 Bot Successfully Started!\n\n"
+            f"🤖 Name: {me.first_name}\n"
+            f"👤 Username: @{me.username}\n"
+            f"🆔 Bot ID: {me.id}\n"
+            f"👑 Owner: {OWNER_ID}\n\n"
+            f"✅ NaraRouter + OpenRouter ready."
+        )
+        try:
+            await application.bot.send_message(chat_id=OWNER_ID, text=text)
+        except Exception as e:
+            print("Owner DM failed:", e)
+        if LOG_GROUP_ID:
+            try:
+                await application.bot.send_message(chat_id=LOG_GROUP_ID, text=text)
+            except Exception as e:
+                print("Log Group failed:", e)
+    except Exception as e:
+        print("Startup notification failed:", e)
 
-    # 1️⃣ Core modules auto-load
+
+def main():
+    app = ApplicationBuilder().token(TOKEN).post_init(_post_init).build()
     print("\n🔄 Loading modules...")
     load_modules(app)
-
-    # 2️⃣ Tools auto-load
     print("\n🔄 Loading tools...")
     load_tools(app)
-
-    # 3️⃣ Error handler
     app.add_error_handler(error_handler)
-
-    print("""
-\033[96m
-██╗  ██╗ █████╗ ██████╗ ██████╗ ██╗   ██╗
-██║  ██║██╔══██╗██╔══██╗██╔══██╗╚██╗ ██╔╝
-███████║███████║██████╔╝██████╔╝ ╚████╔╝ 
-██╔══██║██╔══██║██╔══██╗██╔══██╗  ╚██╔╝  
-██║  ██║██║  ██║██║  ██║██║  ██║   ██║   
-╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
-\033[0m
-\033[95m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👑  HARRY • AI CHATBOT  (Modular)
-📢  Telegram : @SANATANI_BACHA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\033[0m
-""")
-
-    # ========== STARTUP MESSAGE (Owner + Log Group) ==========
-    async def send_startup():
-        try:
-            me = await app.bot.get_me()
-            text = (
-                f"🟢 Bot Successfully Started!\n\n"
-                f"🤖 Name: {me.first_name}\n"
-                f"👤 Username: @{me.username}\n"
-                f"🆔 Bot ID: {me.id}\n"
-                f"👑 Owner: {OWNER_ID}\n\n"
-                f"✅ Bot is now online and ready."
-            )
-
-            # 1. Owner ke DM mein
-            try:
-                await app.bot.send_message(chat_id=OWNER_ID, text=text)
-                print("✅ Startup notification sent to Owner")
-            except Exception as e:
-                print("❌ Owner DM failed:", e)
-
-            # 2. Log Group mein
-            if LOG_GROUP_ID:
-                try:
-                    await app.bot.send_message(chat_id=LOG_GROUP_ID, text=text)
-                    print("✅ Startup notification sent to Log Group")
-                except Exception as e:
-                    print("❌ Log Group failed:", e)
-
-        except Exception as e:
-            print("❌ Startup notification failed:", e)
-
-    # Startup message bhejo
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(send_startup())
-    # ========================================================
-
+    print("HARRY AI CHATBOT (Modular) online")
     app.run_polling(
         drop_pending_updates=True,
         allowed_updates=[
-            "message",
-            "edited_message",
-            "callback_query",
-            "inline_query",
-            "business_connection",
-            "business_message",
-            "edited_business_message",
+            "message", "edited_message", "callback_query", "inline_query",
+            "business_connection", "business_message", "edited_business_message",
             "deleted_business_messages",
         ],
         close_loop=False,
