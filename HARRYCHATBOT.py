@@ -9,6 +9,7 @@ from utils.auto_loader import load_modules, load_tools
 from helpers.clone_runtime import start_saved_clones, UPDATES
 from helpers.heal import note_error, soft_heal
 from helpers.ui import boot_card
+from helpers.botme import apply_me
 
 
 async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
@@ -42,6 +43,14 @@ async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
 async def _post_init(application):
     soft_heal()
     try:
+        me = await application.bot.get_me()
+        apply_me(me)
+        application.bot_data["username"] = me.username
+        application.bot_data["bot_id"] = me.id
+    except Exception as e:
+        print("get_me skip:", e)
+        me = None
+    try:
         await application.bot.set_my_commands([
             BotCommand("start", "Home"),
             BotCommand("help", "Help menu"),
@@ -57,7 +66,9 @@ async def _post_init(application):
     except Exception as e:
         print("clone boot fail:", e)
     try:
-        me = await application.bot.get_me()
+        if me is None:
+            me = await application.bot.get_me()
+            apply_me(me)
         text = boot_card(me, clones=len(started), failed=failed)
         await application.bot.send_message(OWNER_ID, text)
     except Exception as e:

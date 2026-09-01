@@ -6,7 +6,6 @@ LOG_GROUP_ID = int(os.getenv("LOG_GROUP_ID", "0"))
 SUPPORT_CHANNEL = os.getenv("SUPPORT_CHANNEL", "https://t.me/TG_BIO_STYLE")
 MONGO_URI = os.getenv("MONGODB_URI")
 
-# Groq only — also accept GROK_API_KEY typo
 GROQ_API_KEY = (
     os.getenv("GROQ_API_KEY")
     or os.getenv("GROK_API_KEY")
@@ -43,8 +42,8 @@ START_IMAGES = [
     "https://graph.org/file/bb129887cac5752f0f0f5-70aec0f85376516f16.jpg",
 ]
 
-BOT_USERNAME = os.getenv("BOT_USERNAME", "JULIET_MUSUCBOT")
-BOT_NICKNAMES = ["harry", "juliet", "ai", "baby"]
+BOT_USERNAME = os.getenv("BOT_USERNAME", "HARRY_HERUKOBOT")
+BOT_NICKNAMES = ["harry"]
 
 if not TOKEN or not MONGO_URI or not OWNER_ID:
     raise RuntimeError("Missing TELEGRAM_BOT_TOKEN / MONGODB_URI / OWNER_ID")

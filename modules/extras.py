@@ -1,24 +1,15 @@
-from telegram.ext import CommandHandler, CallbackQueryHandler
+from telegram.ext import CommandHandler
 
 from helpers.database import chat_logs
 from helpers.persona import get_prefs
 from helpers.style import sc
 from modules.start import lang_kb, mood_kb
-from helpers.panel import paint
 from helpers.ui import LINE
 
 
-async def mode_cmd_send(message, user_id):
-    prefs = get_prefs(user_id)
-    await message.reply_text(
-        f"🆭 <b>{sc('choose mood')}</b>\n{LINE}\n\n"
-        f"{sc('now')} · <code>{prefs['mode']}</code>",
-        parse_mode="HTML",
-        reply_markup=mood_kb(prefs["mode"]),
-    )
-
-
 async def newchat_cmd(update, context):
+    if not update.message:
+        return
     uid = update.effective_user.id
     cid = update.effective_chat.id
     chat_logs.delete_many({"user_id": uid, "chat_id": cid})
@@ -26,30 +17,37 @@ async def newchat_cmd(update, context):
 
 
 async def profile_cmd(update, context):
+    if not update.message:
+        return
     from modules.start import _screen
-    text, kb = _screen("ui_profile", update.effective_user, context.bot)
-    await update.message.reply_text(text, parse_mode="HTML", reply_markup=kb)
+    packed = _screen("ui_profile", update.effective_user, context.bot)
+    if not packed:
+        return
+    text, kb, ents = packed
+    try:
+        await update.message.reply_text(text, entities=ents, reply_markup=kb)
+    except Exception:
+        await update.message.reply_text(text, reply_markup=kb)
 
 
 async def mode_cmd(update, context):
-    await mode_cmd_send(update.message, update.effective_user.id)
-
-
-async def lang_cmd(update, context):
+    if not update.message:
+        return
     prefs = get_prefs(update.effective_user.id)
     await update.message.reply_text(
-        f"🌐 <b>{sc('choose language')}</b>\n{LINE}\n\n"
-        f"{sc('now')} · <code>{prefs['lang']}</code>",
-        parse_mode="HTML",
-        reply_markup=lang_kb(prefs["lang"]),
+        f"🆭 {sc('choose mood')}\n{LINE}\n\n{sc('now')} · {prefs['mode']}",
+        reply_markup=mood_kb(prefs["mode"]),
     )
 
 
-async def mode_callback(update, context):
-    query = update.callback_query
-    await query.answer()
-    from modules.start import ui_callback
-    return await ui_callback(update, context)
+async def lang_cmd(update, context):
+    if not update.message:
+        return
+    prefs = get_prefs(update.effective_user.id)
+    await update.message.reply_text(
+        f"🌐 {sc('choose language')}\n{LINE}\n\n{sc('now')} · {prefs['lang']}",
+        reply_markup=lang_kb(prefs["lang"]),
+    )
 
 
 async def imagine_cmd(update, context):
