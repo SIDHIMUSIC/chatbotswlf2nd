@@ -1,31 +1,19 @@
 {
   "name": "HARRY CHATBOT",
-  "description": "Modular Telegram AI chatbot — Gemini 3.6 + NaraRouter + OpenRouter",
+  "description": "Modular Telegram AI chatbot — Groq only",
   "repository": "https://github.com/SIDHIMUSIC/chatbotswlf2nd",
   "logo": "https://graph.org/file/705cda02e63f4cb0bdb90-ce4d0ddd3a8cf38b5a.jpg",
-  "keywords": ["telegram", "bot", "ai", "chatbot", "python", "gemini"],
+  "keywords": ["telegram", "bot", "ai", "chatbot", "python", "groq"],
   "env": {
     "TELEGRAM_BOT_TOKEN": {"description": "Telegram Bot Token from @BotFather", "required": true},
     "MONGODB_URI": {"description": "MongoDB Connection URI", "required": true},
     "OWNER_ID": {"description": "Owner Telegram User ID", "required": true},
-    "GEMINI_API_KEY": {"description": "Google Gemini API key (AI Studio)", "required": false},
-    "GEMINI_BASE_URL": {
-      "description": "Gemini REST base URL",
+    "GROQ_API_KEY": {"description": "Groq API key from console.groq.com/keys", "required": true},
+    "GROQ_MODELS": {
+      "description": "Comma-separated Groq chat models",
       "required": false,
-      "value": "https://generativelanguage.googleapis.com/v1beta"
+      "value": "llama-3.1-8b-instant,llama-3.3-70b-versatile,openai/gpt-oss-20b"
     },
-    "GEMINI_MODELS": {
-      "description": "Comma-separated Gemini chat models",
-      "required": false,
-      "value": "gemini-3.6-flash,gemini-3.7-flash,gemini-flash-latest"
-    },
-    "NARA_API_KEY": {"description": "NaraRouter API key from router.bynara.id", "required": false},
-    "NARA_BASE_URL": {
-      "description": "NaraRouter base URL",
-      "required": false,
-      "value": "https://router.bynara.id/v1"
-    },
-    "OPENROUTER_API_KEY": {"description": "OpenRouter backup API key", "required": false},
     "AI_QUALITY": {"description": "free | balanced | high", "required": false, "value": "balanced"},
     "AI_MAX_TOKENS": {"description": "Max reply tokens", "required": false, "value": "180"},
     "LOG_GROUP_ID": {"description": "Log Group ID (optional)", "required": false},

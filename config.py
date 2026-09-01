@@ -1,79 +1,23 @@
 import os
 
-# ================= ENV =================
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 LOG_GROUP_ID = int(os.getenv("LOG_GROUP_ID", "0"))
 SUPPORT_CHANNEL = os.getenv("SUPPORT_CHANNEL", "https://t.me/TG_BIO_STYLE")
 MONGO_URI = os.getenv("MONGODB_URI")
 
-# Gemini (Google AI Studio) — generateContent
-# New keys cannot use gemini-2.5-flash; use 3.6 / 3.7 Flash.
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
-GEMINI_BASE_URL = os.getenv(
-    "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
-).rstrip("/")
-GEMINI_MODELS = [
+# Groq only — also accept GROK_API_KEY typo
+GROQ_API_KEY = (
+    os.getenv("GROQ_API_KEY")
+    or os.getenv("GROK_API_KEY")
+    or ""
+)
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
+GROQ_MODELS = [
     m.strip()
     for m in os.getenv(
-        "GEMINI_MODELS",
-        "gemini-3.6-flash,gemini-3.7-flash,gemini-flash-latest",
-    ).split(",")
-    if m.strip()
-]
-GEMINI_IMAGE_MODELS = [
-    m.strip()
-    for m in os.getenv(
-        "GEMINI_IMAGE_MODELS",
-        "gemini-3.1-flash-image,gemini-3.1-flash-lite-image",
-    ).split(",")
-    if m.strip()
-]
-
-# NaraRouter — https://router.bynara.id
-NARA_API_KEY = os.getenv("NARA_API_KEY") or os.getenv("NARAROUTER_API_KEY", "")
-NARA_BASE_URL = os.getenv("NARA_BASE_URL", "https://router.bynara.id/v1").rstrip("/")
-
-# OpenRouter (backup)
-OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
-OPENROUTER_BASE_URL = os.getenv(
-    "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
-).rstrip("/")
-
-NARA_MODELS = [
-    m.strip()
-    for m in os.getenv(
-        "NARA_MODELS",
-        "agnes-2.5-flash,agnes-2.0-flash,glm-5.3-flash-free,"
-        "minimax-m3-free,laguna-s-2.1,auto/bynara,gpt-5.5",
-    ).split(",")
-    if m.strip()
-]
-OPENROUTER_MODELS = [
-    m.strip()
-    for m in os.getenv(
-        "OPENROUTER_MODELS",
-        "openrouter/free,meta-llama/llama-3.3-70b-instruct:free,"
-        "minimax/minimax-m3:free",
-    ).split(",")
-    if m.strip()
-]
-
-NARA_IMAGE_MODELS = [
-    m.strip()
-    for m in os.getenv(
-        "NARA_IMAGE_MODELS",
-        "agnes-image-2.1-flash,agnes-image-2.0-flash",
-    ).split(",")
-    if m.strip()
-]
-OPENROUTER_IMAGE_MODELS = [
-    m.strip()
-    for m in os.getenv(
-        "OPENROUTER_IMAGE_MODELS",
-        "black-forest-labs/flux.2-schnell,"
-        "google/gemini-2.5-flash-image,"
-        "sourceful/riverflow-v2-quick-preview",
+        "GROQ_MODELS",
+        "llama-3.1-8b-instant,llama-3.3-70b-versatile,openai/gpt-oss-20b",
     ).split(",")
     if m.strip()
 ]
@@ -81,10 +25,7 @@ OPENROUTER_IMAGE_MODELS = [
 AI_QUALITY = os.getenv("AI_QUALITY", "balanced").strip().lower()
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "180"))
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.85"))
-MODEL = os.getenv(
-    "AI_MODEL",
-    GEMINI_MODELS[0] if GEMINI_MODELS else (NARA_MODELS[0] if NARA_MODELS else "auto/bynara"),
-)
+MODEL = os.getenv("AI_MODEL", GROQ_MODELS[0] if GROQ_MODELS else "llama-3.1-8b-instant")
 
 STICKERS = {
     "love": "CAACAgUAAxkBAAICkGpqypsya2BXKP0sNhsEtd-cAsDhAAIxGwACdAwJVM63pdgEFTPJPQQ",
@@ -108,5 +49,5 @@ BOT_NICKNAMES = ["harry", "juliet", "ai", "baby"]
 if not TOKEN or not MONGO_URI or not OWNER_ID:
     raise RuntimeError("Missing TELEGRAM_BOT_TOKEN / MONGODB_URI / OWNER_ID")
 
-if not GEMINI_API_KEY and not NARA_API_KEY and not OPENROUTER_KEY:
-    raise RuntimeError("Missing GEMINI_API_KEY or NARA_API_KEY or OPENROUTER_API_KEY")
+if not GROQ_API_KEY:
+    raise RuntimeError("Missing GROQ_API_KEY")

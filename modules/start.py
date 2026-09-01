@@ -54,7 +54,7 @@ def caption(user, bot_name, extra_users=None):
         f"{sc('image  voice  checkin  clone  groups')}\n\n"
         f"🟢 {sc('status')}  {sc('online')}\n"
         f"🕒 {clock}   👤 {count}\n\n"
-        f"<i>{sc('powered by harry')}</i>"
+        f"<i>{sc('powered by harry')} · groq</i>"
     )
 
 
@@ -142,10 +142,10 @@ async def menu_callback(update, context):
         ),
         "menu_image": (
             f"🖼 <b>{sc('imagine')}</b>\n\n"
-            "<code>/image cyberpunk indian boy 4k</code>"
+            "Groq image nahi deta. Chat text only."
         ),
         "menu_role": (
-            f"🎭 <b>{sc('roleplay')}</b>\n\n"
+            f"🆭 <b>{sc('roleplay')}</b>\n\n"
             f"{sc('start a scene in chat')}\n"
             f"{sc('or pick vibe from')} /mode"
         ),
@@ -162,7 +162,7 @@ async def menu_callback(update, context):
         ),
         "menu_features": (
             f"ℹ️ <b>{sc('about')}</b>\n\n"
-            f"• {sc('nara + openrouter')}\n"
+            f"• Groq Llama\n"
             f"• {sc('voice  checkin  clone')}\n"
             f"• {sc('made by')} @SANATANI_BACHA"
         ),

@@ -36,11 +36,6 @@ async def _post_init(application):
         ])
     except Exception as e:
         print("set commands skip:", e)
-    try:
-        from helpers.catalog import refresh
-        refresh()
-    except Exception as e:
-        print("catalog warmup skip:", e)
     started, failed = [], []
     try:
         started, failed = await start_saved_clones()
@@ -51,7 +46,7 @@ async def _post_init(application):
         text = (
             f"Online: {me.first_name} (@{me.username})\n"
             f"Clones live: {len(started)}\n"
-            + ("Failed: " + "; ".join(failed[:5]) if failed else "Nara + OpenRouter ready.")
+            + ("Failed: " + "; ".join(failed[:5]) if failed else "Groq ready.")
         )
         await application.bot.send_message(OWNER_ID, text)
     except Exception as e:
@@ -69,7 +64,7 @@ def main():
     load_modules(app)
     load_tools(app)
     app.add_error_handler(error_handler)
-    print("HARRY online")
+    print("HARRY online — Groq")
     app.run_polling(
         drop_pending_updates=True,
         allowed_updates=UPDATES,

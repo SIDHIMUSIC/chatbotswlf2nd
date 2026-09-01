@@ -1,29 +1,19 @@
 from telegram.ext import CommandHandler
-from helpers.catalog import refresh, snapshot
+from helpers.catalog import snapshot
 from helpers.decorators import is_owner
 
 
 async def models_cmd(update, context):
     if not is_owner(update.effective_user.id):
         return await update.message.reply_text("Owner only.")
-    try:
-        refresh()
-    except Exception:
-        pass
     snap = snapshot()
     chat = snap.get("chat") or []
-    img = snap.get("image") or []
-    gem = snap.get("gemini") or []
     dead = snap.get("dead") or []
     best = snap.get("best") or {}
     text = (
-        "⚡ <b>MODEL POOL</b>\n"
-        f"Quality: <code>{snap.get('quality')}</code>\n"
-        f"Gemini sticky: <code>{best.get('gemini') or '—'}</code>\n"
-        f"Nara sticky: <code>{best.get('nara') or '—'}</code>\n\n"
-        f"Gemini ({len(gem)}):\n<code>{', '.join(gem) if gem else 'off'}</code>\n\n"
-        f"Nara chat ({len(chat)}):\n<code>{', '.join(chat[:25])}</code>\n\n"
-        f"Image ({len(img)}):\n<code>{', '.join(img[:12])}</code>\n\n"
+        "⚡ <b>GROQ POOL</b>\n"
+        f"Sticky: <code>{best.get('groq') or '—'}</code>\n\n"
+        f"Chat: <code>{', '.join(chat)}</code>\n\n"
         f"Cooldown: <code>{', '.join(dead) if dead else 'none'}</code>"
     )
     await update.message.reply_text(text[:3900], parse_mode="HTML")
@@ -32,8 +22,7 @@ async def models_cmd(update, context):
 async def refresh_cmd(update, context):
     if not is_owner(update.effective_user.id):
         return
-    refresh(force=True)
-    await update.message.reply_text("Pool refresh ho gayi.")
+    await update.message.reply_text("Groq pool static hai — refresh ki zaroorat nahi.")
 
 
 def register(app):
