@@ -2,6 +2,9 @@ from telegram import MessageEntity
 
 from helpers.ui import PE
 
+# Custom emoji entity length Telegram expect karta hai ~2 UTF-16 units
+MARK = "🔥"
+
 
 def u16(s: str) -> int:
     return len((s or "").encode("utf-16-le")) // 2
@@ -15,8 +18,8 @@ class Rich:
         self.parts.append(s or "")
         return self
 
-    def e(self, key, fallback="✦"):
-        self.parts.append((fallback, (PE.get(key) or "").strip()))
+    def e(self, key, fallback=None):
+        self.parts.append((MARK, (PE.get(key) or "").strip()))
         return self
 
     def build(self):
