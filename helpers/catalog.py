@@ -1,4 +1,4 @@
-"""Live NaraRouter catalog — never block the first chat."""
+"""Live model catalog — never block the first chat."""
 import time
 import requests
 
@@ -9,6 +9,8 @@ from config import (
     NARA_MODELS,
     OPENROUTER_IMAGE_MODELS,
     OPENROUTER_MODELS,
+    GEMINI_MODELS,
+    GEMINI_IMAGE_MODELS,
     AI_QUALITY,
 )
 
@@ -26,7 +28,7 @@ FAST_FREE = [
 _CACHE = {"t": 0, "chat": list(NARA_MODELS) or list(FAST_FREE), "image": list(NARA_IMAGE_MODELS), "all": []}
 _TTL = 1800
 _DEAD = {}
-_BEST = {"nara": None, "openrouter": None}
+_BEST = {"gemini": None, "nara": None, "openrouter": None}
 
 
 def _is_image(mid: str) -> bool:
@@ -40,8 +42,9 @@ def is_dead(model: str) -> bool:
 
 def mark_fail(model: str):
     _DEAD[model] = time.time() + 180
-    if _BEST.get("nara") == model:
-        _BEST["nara"] = None
+    for key, val in list(_BEST.items()):
+        if val == model:
+            _BEST[key] = None
 
 
 def mark_ok(model: str, provider="nara"):
@@ -103,10 +106,23 @@ def or_image_models():
     return [m for m in OPENROUTER_IMAGE_MODELS if not is_dead(m)] or list(OPENROUTER_IMAGE_MODELS)
 
 
+def gemini_chat_models():
+    models = [m for m in GEMINI_MODELS if not is_dead(m)] or list(GEMINI_MODELS)
+    best = _BEST.get("gemini")
+    if best and best in models:
+        models = [best] + [m for m in models if m != best]
+    return models
+
+
+def gemini_image_models():
+    return [m for m in GEMINI_IMAGE_MODELS if not is_dead(m)] or list(GEMINI_IMAGE_MODELS)
+
+
 def snapshot():
     return {
         "chat": _CACHE.get("chat") or FAST_FREE,
         "image": _CACHE.get("image") or list(NARA_IMAGE_MODELS),
+        "gemini": list(GEMINI_MODELS),
         "dead": [m for m, t in _DEAD.items() if t > time.time()],
         "best": dict(_BEST),
         "quality": AI_QUALITY,

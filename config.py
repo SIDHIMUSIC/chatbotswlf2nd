@@ -7,6 +7,28 @@ LOG_GROUP_ID = int(os.getenv("LOG_GROUP_ID", "0"))
 SUPPORT_CHANNEL = os.getenv("SUPPORT_CHANNEL", "https://t.me/TG_BIO_STYLE")
 MONGO_URI = os.getenv("MONGODB_URI")
 
+# Gemini (Google AI Studio) — generateContent
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
+GEMINI_BASE_URL = os.getenv(
+    "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
+).rstrip("/")
+GEMINI_MODELS = [
+    m.strip()
+    for m in os.getenv(
+        "GEMINI_MODELS",
+        "gemini-flash-latest,gemini-2.5-flash,gemini-2.0-flash",
+    ).split(",")
+    if m.strip()
+]
+GEMINI_IMAGE_MODELS = [
+    m.strip()
+    for m in os.getenv(
+        "GEMINI_IMAGE_MODELS",
+        "gemini-2.5-flash-image,gemini-2.0-flash-preview-image-generation",
+    ).split(",")
+    if m.strip()
+]
+
 # NaraRouter (primary) — https://router.bynara.id
 NARA_API_KEY = os.getenv("NARA_API_KEY") or os.getenv("NARAROUTER_API_KEY", "")
 NARA_BASE_URL = os.getenv("NARA_BASE_URL", "https://router.bynara.id/v1").rstrip("/")
@@ -58,7 +80,10 @@ OPENROUTER_IMAGE_MODELS = [
 AI_QUALITY = os.getenv("AI_QUALITY", "balanced").strip().lower()
 AI_MAX_TOKENS = int(os.getenv("AI_MAX_TOKENS", "180"))
 AI_TEMPERATURE = float(os.getenv("AI_TEMPERATURE", "0.85"))
-MODEL = os.getenv("AI_MODEL", NARA_MODELS[0] if NARA_MODELS else "auto/bynara")
+MODEL = os.getenv(
+    "AI_MODEL",
+    GEMINI_MODELS[0] if GEMINI_MODELS else (NARA_MODELS[0] if NARA_MODELS else "auto/bynara"),
+)
 
 STICKERS = {
     "love": "CAACAgUAAxkBAAICkGpqypsya2BXKP0sNhsEtd-cAsDhAAIxGwACdAwJVM63pdgEFTPJPQQ",
@@ -82,5 +107,5 @@ BOT_NICKNAMES = ["harry", "juliet", "ai", "baby"]
 if not TOKEN or not MONGO_URI or not OWNER_ID:
     raise RuntimeError("Missing TELEGRAM_BOT_TOKEN / MONGODB_URI / OWNER_ID")
 
-if not NARA_API_KEY and not OPENROUTER_KEY:
-    raise RuntimeError("Missing NARA_API_KEY or OPENROUTER_API_KEY")
+if not GEMINI_API_KEY and not NARA_API_KEY and not OPENROUTER_KEY:
+    raise RuntimeError("Missing GEMINI_API_KEY or NARA_API_KEY or OPENROUTER_API_KEY")

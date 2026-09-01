@@ -13,13 +13,16 @@ async def models_cmd(update, context):
     snap = snapshot()
     chat = snap.get("chat") or []
     img = snap.get("image") or []
+    gem = snap.get("gemini") or []
     dead = snap.get("dead") or []
     best = snap.get("best") or {}
     text = (
         "⚡ <b>MODEL POOL</b>\n"
         f"Quality: <code>{snap.get('quality')}</code>\n"
-        f"Sticky: <code>{best.get('nara') or '—'}</code>\n\n"
-        f"Chat ({len(chat)}):\n<code>{', '.join(chat[:25])}</code>\n\n"
+        f"Gemini sticky: <code>{best.get('gemini') or '—'}</code>\n"
+        f"Nara sticky: <code>{best.get('nara') or '—'}</code>\n\n"
+        f"Gemini ({len(gem)}):\n<code>{', '.join(gem) if gem else 'off'}</code>\n\n"
+        f"Nara chat ({len(chat)}):\n<code>{', '.join(chat[:25])}</code>\n\n"
         f"Image ({len(img)}):\n<code>{', '.join(img[:12])}</code>\n\n"
         f"Cooldown: <code>{', '.join(dead) if dead else 'none'}</code>"
     )

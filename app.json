@@ -1,9 +1,9 @@
 {
   "name": "HARRY CHATBOT",
-  "description": "Modular Telegram AI chatbot — NaraRouter + OpenRouter backup",
+  "description": "Modular Telegram AI chatbot — Gemini + NaraRouter + OpenRouter",
   "repository": "https://github.com/SIDHIMUSIC/chatbotswlf2nd",
   "logo": "https://graph.org/file/705cda02e63f4cb0bdb90-ce4d0ddd3a8cf38b5a.jpg",
-  "keywords": ["telegram", "bot", "ai", "chatbot", "python"],
+  "keywords": ["telegram", "bot", "ai", "chatbot", "python", "gemini"],
   "env": {
     "TELEGRAM_BOT_TOKEN": {
       "description": "Telegram Bot Token from @BotFather",
@@ -16,6 +16,20 @@
     "OWNER_ID": {
       "description": "Owner Telegram User ID",
       "required": true
+    },
+    "GEMINI_API_KEY": {
+      "description": "Google Gemini API key (AI Studio)",
+      "required": false
+    },
+    "GEMINI_BASE_URL": {
+      "description": "Gemini REST base URL",
+      "required": false,
+      "value": "https://generativelanguage.googleapis.com/v1beta"
+    },
+    "GEMINI_MODELS": {
+      "description": "Comma-separated Gemini chat models",
+      "required": false,
+      "value": "gemini-flash-latest,gemini-2.5-flash,gemini-2.0-flash"
     },
     "NARA_API_KEY": {
       "description": "NaraRouter API key from router.bynara.id",
