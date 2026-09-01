@@ -34,14 +34,16 @@ PE = {
     "crown": IDS[11],
     "home": IDS[12],
     "star": IDS[13],
-    "heart": IDS[4],
-    "fire": IDS[6],
+    "heart": IDS[10],
+    "fire": IDS[11],
     "support": IDS[9],
+    "online": IDS[0],
+    "people": IDS[5],
 }
 
 LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
 OWNER_USER = "SANATANI_BACHA"
-OWNER_NAME = "🉩◕🇧𝐀𝐑𝐑𝐘◕🉪 =‌𐌓 Ἑc⃘🇮🇳™"
+OWNER_NAME = "Harry"
 
 
 def spaced(word: str) -> str:
@@ -60,14 +62,10 @@ def boot_card(me, clones=0, failed=None):
         f"          A I   C H A T\n"
         f"╰{LINE}╯\n\n"
         f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅʏ  😻\n\n"
-        f"🤖  ɴᴀᴍᴇ\n"
-        f"   └─ {name}\n\n"
-        f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n"
-        f"   └─ @{uname}\n\n"
-        f"🆔  ʙᴏᴛ ɪᴅ\n"
-        f"   └─ {bid}\n\n"
-        f"👑  ᴏᴡɴᴇʀ\n"
-        f"   └─ {OWNER_ID}\n\n"
+        f"🤖  ɴᴀᴍᴇ\n   └─ {name}\n\n"
+        f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n   └─ @{uname}\n\n"
+        f"🆔  ʙᴏᴛ ɪᴅ\n   └─ {bid}\n\n"
+        f"👑  ᴏᴡɴᴇʀ\n   └─ {OWNER_ID}\n\n"
         f"{LINE}\n\n"
         f"💞  ʜᴇʟʟᴏ, ɪ'ᴍ {name}\n"
         f"╰─➤  😻 ᴇɴⱼᴏʏ ᴛʜᴇ ᴄʜᴀᴛ!\n"
