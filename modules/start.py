@@ -9,10 +9,9 @@ from config import START_IMAGES, SUPPORT_CHANNEL, BOT_USERNAME
 from helpers.decorators import is_owner
 from helpers.style import sc
 from helpers.database import users, chat_logs
-from helpers.ui import LINE, OWNER_USER, btn
+from helpers.ui import LINE, OWNER_NAME, OWNER_USER, btn, pe
 from helpers.panel import paint
 from helpers.persona import LANGS, MODES, get_prefs, set_pref
-from helpers.memory import get_memory
 
 IST = pytz.timezone("Asia/Kolkata")
 
@@ -34,7 +33,7 @@ LANG_LABEL = {
 
 
 def _uname(bot):
-    return (getattr(bot, "username", None) or BOT_USERNAME or "JULIET_MUSUCBOT").lstrip("@")
+    return (getattr(bot, "username", None) or BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
 
 
 def nav_kb(back_to=None):
@@ -46,7 +45,7 @@ def nav_kb(back_to=None):
 
 
 def home_kb(user_id=None, bot_username=None):
-    uname = (bot_username or BOT_USERNAME or "JULIET_MUSUCBOT").lstrip("@")
+    uname = (bot_username or BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
     rows = [
         [
             btn("ᴄʜᴀᴛ", callback_data="ui_chat", pe_name="chat"),
@@ -131,22 +130,20 @@ def help_kb():
 
 
 def caption_home(user, bot, extra_users=None):
-    name = user.first_name or "✦"
     uname = _uname(bot)
     clock = datetime.now(IST).strftime("%I:%M %p")
     count = extra_users if extra_users not in (None, "-") else "—"
     prefs = get_prefs(user.id)
     return (
-        f"✦ <b>{sc('hey')} {name}</b>\n"
-        f"✦ {sc('i am')} <b>@{uname}</b>\n"
+        f"{pe('hey', '✦')} {sc('hey')} {OWNER_NAME}\n"
+        f"{pe('bot', '✦')} {sc('i am')} @{uname}\n"
         f"{sc('your personal ai companion')}\n\n"
         f"{LINE}\n"
-        f"🆭 {sc('mood')} · <code>{prefs['mode']}</code>\n"
-        f"🌐 {sc('lang')} · <code>{prefs['lang']}</code>\n"
+        f"{pe('mood', '🆭')} {sc('mood')} · {prefs['mode']}    {pe('lang', '🌐')} {sc('lang')} · {prefs['lang']}\n"
         f"{sc('always online for late night talks')}\n"
         f"{LINE}\n\n"
-        f"🟢 {sc('online')}    🕒 {clock}    👤 {count}\n\n"
-        f"<i>{sc('powered by harry')}</i>"
+        f"{pe('online', '🟢')} {sc('online')}    {pe('clock', '🕒')} {clock}    {pe('people', '👤')} {count}\n\n"
+        f"{sc('powered by harry')}"
     )
 
 
@@ -160,6 +157,13 @@ async def _user_count():
             return None
 
 
+def _chat_count(user_id):
+    try:
+        return chat_logs.count_documents({"user_id": user_id})
+    except Exception:
+        return 0
+
+
 async def send_home(message, user, bot):
     text = caption_home(user, bot, await _user_count())
     kb = home_kb(user.id, bot.username)
@@ -169,7 +173,13 @@ async def send_home(message, user, bot):
             return await message.reply_photo(photo=photo, caption=text, parse_mode="HTML", reply_markup=kb)
         except Exception:
             pass
-    return await message.reply_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
+    try:
+        return await message.reply_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
+    except Exception:
+        return await message.reply_text(
+            f"✦ {sc('hey')}\n✦ @{_uname(bot)}",
+            reply_markup=kb,
+        )
 
 
 async def start(update, context):
@@ -188,21 +198,19 @@ async def start_from_callback(update, context):
 
 
 def owner_card():
-    from helpers.ui import OWNER_NAME
     text = (
-        f"👑 <b>{sc('bot owner profile')}</b> ✨\n"
+        f"{pe('crown', '👑')} {sc('bot owner profile')}\n"
         f"{LINE}\n\n"
-        f"✨ {sc('this intelligent ai bot is proudly crafted')}\n"
+        f"{pe('star', '✨')} {sc('this intelligent ai bot is proudly crafted')}\n"
         f"{sc('owned and managed by')}\n\n"
-        f"👤 <b><a href='https://t.me/{OWNER_USER}'>{OWNER_NAME}</a></b>\n"
-        f"🔗 @{OWNER_USER}\n\n"
-        f"🚀 {sc('a passionate developer')}\n"
+        f"{pe('user', '👤')} {OWNER_NAME}\n"
+        f"{pe('bot', '🔗')} @{OWNER_USER}\n\n"
+        f"{pe('fire', '🚀')} {sc('a passionate developer')}\n"
         f"• {sc('smart automation')}\n"
         f"• {sc('secure systems')}\n"
         f"• {sc('smooth user experience')}\n\n"
-        f"💡 {sc('vision')}\n"
-        f"{sc('creating powerful reliable ai bots')}\n\n"
-        f"👇 {sc('connect and stay updated')}"
+        f"{pe('spark', '💡')} {sc('vision')}\n"
+        f"{sc('creating powerful reliable ai bots')}"
     )
     kb = InlineKeyboardMarkup([
         [btn("◍ ᴏᴡɴᴇʀ ◍", url=f"https://t.me/{OWNER_USER}", pe_name="owner")],
@@ -220,38 +228,35 @@ def _screen(key, user, bot):
     prefs = get_prefs(user.id)
     if key == "ui_chat":
         return (
-            f"💬 <b>{sc('live chat')}</b>\n{LINE}\n\n"
+            f"{pe('chat', '💬')} {sc('live chat')}\n{LINE}\n\n"
             f"{sc('neeche type karo')}\n"
-            f"{sc('mood')} · <code>{prefs['mode']}</code>\n"
-            f"{sc('lang')} · <code>{prefs['lang']}</code>",
+            f"{sc('mood')} · {prefs['mode']}\n"
+            f"{sc('lang')} · {prefs['lang']}",
             nav_kb("home"),
         )
     if key in ("ui_help", "help_home"):
         return (
-            f"📖 <b>{sc('help menu')}</b>\n{LINE}\n\n"
-            f"{sc('i am')} <b>@{uname}</b>\n"
+            f"{pe('help', '📖')} {sc('help menu')}\n{LINE}\n\n"
+            f"{sc('i am')} @{uname}\n"
             f"{sc('your personal ai companion')}\n\n"
-            f"💬 {sc('chat')} — {sc('type anything')}\n"
-            f"🆭 {sc('mood')} — gf / bf / bestie / waifu / pro\n"
-            f"🌐 {sc('lang')} — hindi english hinglish +\n"
-            f"📅 {sc('checkin')} — {sc('daily streak')}\n"
-            f"🤖 {sc('clone')} — /clone TOKEN\n"
-            f"✨ {sc('new chat')} — {sc('reset memory')}\n\n"
-            f"{sc('groups me reply ya')} @{uname}",
+            f"{pe('chat', '💬')} {sc('chat')} — {sc('type anything')}\n"
+            f"{pe('mood', '🆭')} {sc('mood')} — gf / bf / bestie / waifu / pro\n"
+            f"{pe('lang', '🌐')} {sc('lang')} — hindi english hinglish\n"
+            f"{pe('cal', '📅')} {sc('checkin')} — {sc('daily streak')}\n"
+            f"{pe('clone', '🤖')} {sc('clone')} — /clone TOKEN",
             help_kb(),
         )
     if key == "help_chat":
         return (
-            f"💬 <b>{sc('chat guide')}</b>\n{LINE}\n\n"
+            f"{pe('chat', '💬')} {sc('chat guide')}\n{LINE}\n\n"
             f"• {sc('just type')}\n"
             f"• {sc('voice note bhejo')}\n"
-            f"• <code>yaad rakh city: Patna</code>\n"
             f"• /newchat — {sc('fresh start')}",
             help_kb(),
         )
     if key == "help_tools":
         return (
-            f"✨ <b>{sc('tools')}</b>\n{LINE}\n\n"
+            f"{pe('spark', '✨')} {sc('tools')}\n{LINE}\n\n"
             f"/start — {sc('home')}\n"
             f"/help — {sc('this menu')}\n"
             f"/newchat — {sc('reset')}\n"
@@ -263,7 +268,7 @@ def _screen(key, user, bot):
         )
     if key == "help_owner":
         return (
-            f"👑 <b>{sc('owner')}</b>\n{LINE}\n\n"
+            f"{pe('crown', '👑')} {sc('owner')}\n{LINE}\n\n"
             f"@{OWNER_USER}\n"
             f"/stats  /broadcast\n"
             f"/heal  /restart",
@@ -271,35 +276,39 @@ def _screen(key, user, bot):
         )
     if key == "ui_mood":
         return (
-            f"🆭 <b>{sc('choose mood')}</b>\n{LINE}\n\n"
-            f"{sc('now')} · <code>{prefs['mode']}</code>\n"
+            f"{pe('mood', '🆭')} {sc('choose mood')}\n{LINE}\n\n"
+            f"{sc('now')} · {prefs['mode']}\n"
             f"{sc('tap one then chat')}",
             mood_kb(prefs["mode"]),
         )
     if key == "ui_lang":
         return (
-            f"🌐 <b>{sc('choose language')}</b>\n{LINE}\n\n"
-            f"{sc('now')} · <code>{prefs['lang']}</code>\n"
+            f"{pe('lang', '🌐')} {sc('choose language')}\n{LINE}\n\n"
+            f"{sc('now')} · {prefs['lang']}\n"
             f"{sc('tap one then chat')}",
             lang_kb(prefs["lang"]),
         )
     if key == "ui_profile":
-        mem = get_memory(user.id)
         doc = users.find_one({"user_id": user.id}) or {}
-        mem_lines = "\n".join(f"• {k}: {v}" for k, v in list(mem.items())[:6]) or sc("empty")
+        chats = _chat_count(user.id)
+        handle = f"@{user.username}" if user.username else "—"
         return (
-            f"👤 <b>{sc('profile')}</b>\n{LINE}\n\n"
-            f"{sc('mood')} · <code>{prefs['mode']}</code>\n"
-            f"{sc('lang')} · <code>{prefs['lang']}</code>\n"
-            f"{sc('streak')} · <code>{doc.get('checkin_streak') or 0}</code>\n\n"
-            f"{mem_lines}",
+            f"{pe('user', '👤')} {sc('profile')}\n"
+            f"{LINE}\n\n"
+            f"{pe('hey', '✦')} {user.first_name or '—'}\n"
+            f"{pe('bot', '🔗')} {handle}\n"
+            f"{pe('crown', '🆔')} ɪᴅ  ·  {user.id}\n"
+            f"{pe('chat', '💬')} ᴄʜᴀᴛѕ  ·  {chats}\n"
+            f"{pe('mood', '🆭')} {sc('mood')}  ·  {prefs['mode']}\n"
+            f"{pe('lang', '🌐')} {sc('lang')}  ·  {prefs['lang']}\n"
+            f"{pe('cal', '🔥')} {sc('streak')}  ·  {doc.get('checkin_streak') or 0}",
             nav_kb("home"),
         )
     if key == "ui_clone":
         return (
-            f"🤖 <b>{sc('clone')}</b>\n{LINE}\n\n"
-            "<code>/clone TOKEN</code>\n"
-            "<code>/myclones</code>",
+            f"{pe('clone', '🤖')} {sc('clone')}\n{LINE}\n\n"
+            "/clone TOKEN\n"
+            "/myclones",
             nav_kb("home"),
         )
     if key == "ui_owner":
@@ -339,7 +348,7 @@ async def ui_callback(update, context):
         chat_logs.delete_many({"user_id": user.id, "chat_id": query.message.chat_id})
         await paint(
             query,
-            f"✨ <b>{sc('new chat')}</b>\n{LINE}\n\n{sc('purani baat reset ho gayi')}",
+            f"{pe('spark', '✨')} {sc('new chat')}\n{LINE}\n\n{sc('purani baat reset ho gayi')}",
             nav_kb("home"),
         )
         return
@@ -349,7 +358,7 @@ async def ui_callback(update, context):
             body = await do_checkin_text(user)
         except Exception:
             body = sc("checkin done")
-        await paint(query, f"📅 <b>{sc('check in')}</b>\n{LINE}\n\n{body}", nav_kb("home"))
+        await paint(query, f"{pe('cal', '📅')} {sc('check in')}\n{LINE}\n\n{body}", nav_kb("home"))
         return
     packed = _screen(data, user, context.bot)
     if packed:
