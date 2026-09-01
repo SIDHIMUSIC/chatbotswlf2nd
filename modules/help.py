@@ -1,27 +1,21 @@
 from telegram.ext import CommandHandler
 
-from modules.start import _screen, send_home
+from modules.start import _screen
 
 
 async def help_cmd(update, context):
     if not update.message:
         return
-    text, kb = _screen("ui_help", update.effective_user, context.bot)
-    try:
-        await update.message.reply_photo(
-            photo=update.message.reply_to_message.photo[-1].file_id
-            if update.message.reply_to_message and update.message.reply_to_message.photo
-            else None,
-            caption=text,
-            parse_mode="HTML",
-            reply_markup=kb,
-        )
+    packed = _screen("ui_help", update.effective_user, context.bot)
+    if not packed:
         return
+    text, kb, ents = packed
+    try:
+        await update.message.reply_text(
+            text, entities=ents, reply_markup=kb, disable_web_page_preview=True
+        )
     except Exception:
-        pass
-    await update.message.reply_text(
-        text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True
-    )
+        await update.message.reply_text(text, reply_markup=kb, disable_web_page_preview=True)
 
 
 def register(app):
