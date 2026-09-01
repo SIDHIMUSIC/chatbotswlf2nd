@@ -9,7 +9,7 @@ from config import START_IMAGES, SUPPORT_CHANNEL, BOT_USERNAME
 from helpers.decorators import is_owner
 from helpers.style import sc
 from helpers.database import users, chat_logs
-from helpers.ui import LINE, OWNER_USER, btn, pe
+from helpers.ui import LINE, OWNER_USER, btn
 from helpers.panel import paint
 from helpers.persona import LANGS, MODES, get_prefs, set_pref
 from helpers.memory import get_memory
@@ -35,6 +35,14 @@ LANG_LABEL = {
 
 def _uname(bot):
     return (getattr(bot, "username", None) or BOT_USERNAME or "JULIET_MUSUCBOT").lstrip("@")
+
+
+def nav_kb(back_to=None):
+    row = []
+    if back_to:
+        row.append(btn("◀️ ʙᴀᴄᴋ", callback_data=back_to, pe_name="home"))
+    row.append(btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"))
+    return InlineKeyboardMarkup([row])
 
 
 def home_kb(user_id=None, bot_username=None):
@@ -68,7 +76,7 @@ def home_kb(user_id=None, bot_username=None):
 
 
 def back_kb():
-    return InlineKeyboardMarkup([[btn("ʜᴏᴍᴇ", callback_data="home", pe_name="home")]])
+    return nav_kb()
 
 
 def mood_kb(cur="bestie"):
@@ -81,7 +89,10 @@ def mood_kb(cur="bestie"):
             row = []
     if row:
         rows.append(row)
-    rows.append([btn("ʜᴏᴍᴇ", callback_data="home", pe_name="home")])
+    rows.append([
+        btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"),
+        btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+    ])
     return InlineKeyboardMarkup(rows)
 
 
@@ -95,8 +106,28 @@ def lang_kb(cur="hinglish"):
             row = []
     if row:
         rows.append(row)
-    rows.append([btn("ʜᴏᴍᴇ", callback_data="home", pe_name="home")])
+    rows.append([
+        btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"),
+        btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+    ])
     return InlineKeyboardMarkup(rows)
+
+
+def help_kb():
+    return InlineKeyboardMarkup([
+        [
+            btn("ᴄʜᴀᴛ", callback_data="help_chat", pe_name="chat"),
+            btn("ᴛᴏᴏʟѕ", callback_data="help_tools", pe_name="spark"),
+        ],
+        [
+            btn("ᴏᴡɴᴇʀ", callback_data="help_owner", pe_name="crown"),
+            btn("ᴄʟᴏɴᴇ", callback_data="ui_clone", pe_name="clone"),
+        ],
+        [
+            btn("◀️ ʙᴀᴄᴋ", callback_data="ui_help", pe_name="home"),
+            btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+        ],
+    ])
 
 
 def caption_home(user, bot, extra_users=None):
@@ -106,15 +137,15 @@ def caption_home(user, bot, extra_users=None):
     count = extra_users if extra_users not in (None, "-") else "—"
     prefs = get_prefs(user.id)
     return (
-        f"{pe('hey', '✦')} <b>{sc('hey')} {name}</b>\n"
-        f"{pe('bot', '✦')} {sc('i am')} <b>@{uname}</b>\n"
+        f"✦ <b>{sc('hey')} {name}</b>\n"
+        f"✦ {sc('i am')} <b>@{uname}</b>\n"
         f"{sc('your personal ai companion')}\n\n"
         f"{LINE}\n"
-        f"{pe('mood', '🆭')} {sc('mood')} · <code>{prefs['mode']}</code>\n"
-        f"{pe('lang', '🌐')} {sc('lang')} · <code>{prefs['lang']}</code>\n"
+        f"🆭 {sc('mood')} · <code>{prefs['mode']}</code>\n"
+        f"🌐 {sc('lang')} · <code>{prefs['lang']}</code>\n"
         f"{sc('always online for late night talks')}\n"
         f"{LINE}\n\n"
-        f"{pe('online', '🟢')} {sc('online')}    {pe('cal', '🕒')} {clock}    {pe('user', '👤')} {count}\n\n"
+        f"🟢 {sc('online')}    🕒 {clock}    👤 {count}\n\n"
         f"<i>{sc('powered by harry')}</i>"
     )
 
@@ -137,17 +168,7 @@ async def send_home(message, user, bot):
         try:
             return await message.reply_photo(photo=photo, caption=text, parse_mode="HTML", reply_markup=kb)
         except Exception:
-            plain = text
-            for tag in ("tg-emoji",):
-                pass
-            try:
-                return await message.reply_photo(
-                    photo=photo,
-                    caption=f"✦ {sc('hey')} {user.first_name}\n✦ @{_uname(bot)}",
-                    reply_markup=kb,
-                )
-            except Exception:
-                pass
+            pass
     return await message.reply_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
 
 
@@ -159,32 +180,37 @@ async def start(update, context):
 
 async def start_from_callback(update, context):
     query = update.callback_query
-    await query.answer()
+    await query.answer("Home")
     text = caption_home(query.from_user, context.bot, await _user_count())
-    await paint(query, text, home_kb(query.from_user.id, context.bot.username))
+    ok = await paint(query, text, home_kb(query.from_user.id, context.bot.username))
+    if not ok and query.message:
+        await send_home(query.message, query.from_user, context.bot)
 
 
 def owner_card():
     from helpers.ui import OWNER_NAME
     text = (
-        f"{pe('crown', '👑')} <b>{sc('bot owner profile')}</b> {pe('star', '✨')}\n"
+        f"👑 <b>{sc('bot owner profile')}</b> ✨\n"
         f"{LINE}\n\n"
-        f"{pe('star', '✨')} {sc('this intelligent ai bot is proudly crafted')}\n"
+        f"✨ {sc('this intelligent ai bot is proudly crafted')}\n"
         f"{sc('owned and managed by')}\n\n"
-        f"{pe('user', '👤')} <b><a href='https://t.me/{OWNER_USER}'>{OWNER_NAME}</a></b>\n"
-        f"{pe('bot', '🔗')} @{OWNER_USER}\n\n"
-        f"{pe('fire', '🚀')} {sc('a passionate developer')}\n"
-        f"• {sc('smart automation')} {pe('clone', '🤖')}\n"
+        f"👤 <b><a href='https://t.me/{OWNER_USER}'>{OWNER_NAME}</a></b>\n"
+        f"🔗 @{OWNER_USER}\n\n"
+        f"🚀 {sc('a passionate developer')}\n"
+        f"• {sc('smart automation')}\n"
         f"• {sc('secure systems')}\n"
-        f"• {sc('smooth user experience')} {pe('heart', '💗')}\n\n"
-        f"{pe('spark', '💡')} {sc('vision')}\n"
+        f"• {sc('smooth user experience')}\n\n"
+        f"💡 {sc('vision')}\n"
         f"{sc('creating powerful reliable ai bots')}\n\n"
-        f"{pe('hey', '👇')} {sc('connect and stay updated')}"
+        f"👇 {sc('connect and stay updated')}"
     )
     kb = InlineKeyboardMarkup([
         [btn("◍ ᴏᴡɴᴇʀ ◍", url=f"https://t.me/{OWNER_USER}", pe_name="owner")],
         [btn("◍ ѕᴜᴘᴘᴏʀᴛ ᴄʜᴀɴɴᴇʟ ◍", url=SUPPORT_CHANNEL, pe_name="news")],
-        [btn("ʜᴏᴍᴇ", callback_data="home", pe_name="home")],
+        [
+            btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"),
+            btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+        ],
     ])
     return text, kb
 
@@ -194,30 +220,67 @@ def _screen(key, user, bot):
     prefs = get_prefs(user.id)
     if key == "ui_chat":
         return (
-            f"{pe('chat', '💬')} <b>{sc('live chat')}</b>\n{LINE}\n\n"
+            f"💬 <b>{sc('live chat')}</b>\n{LINE}\n\n"
             f"{sc('neeche type karo')}\n"
             f"{sc('mood')} · <code>{prefs['mode']}</code>\n"
             f"{sc('lang')} · <code>{prefs['lang']}</code>",
-            back_kb(),
+            nav_kb("home"),
         )
-    if key == "ui_help":
+    if key in ("ui_help", "help_home"):
         return (
-            f"{pe('help', '📖')} <b>{sc('help')}</b>\n{LINE}\n\n"
-            f"{sc('i am')} <b>@{uname}</b>\n\n"
-            f"/start  /help  /newchat\n"
-            f"/checkin  /clone  /ping",
-            back_kb(),
+            f"📖 <b>{sc('help menu')}</b>\n{LINE}\n\n"
+            f"{sc('i am')} <b>@{uname}</b>\n"
+            f"{sc('your personal ai companion')}\n\n"
+            f"💬 {sc('chat')} — {sc('type anything')}\n"
+            f"🆭 {sc('mood')} — gf / bf / bestie / waifu / pro\n"
+            f"🌐 {sc('lang')} — hindi english hinglish +\n"
+            f"📅 {sc('checkin')} — {sc('daily streak')}\n"
+            f"🤖 {sc('clone')} — /clone TOKEN\n"
+            f"✨ {sc('new chat')} — {sc('reset memory')}\n\n"
+            f"{sc('groups me reply ya')} @{uname}",
+            help_kb(),
+        )
+    if key == "help_chat":
+        return (
+            f"💬 <b>{sc('chat guide')}</b>\n{LINE}\n\n"
+            f"• {sc('just type')}\n"
+            f"• {sc('voice note bhejo')}\n"
+            f"• <code>yaad rakh city: Patna</code>\n"
+            f"• /newchat — {sc('fresh start')}",
+            help_kb(),
+        )
+    if key == "help_tools":
+        return (
+            f"✨ <b>{sc('tools')}</b>\n{LINE}\n\n"
+            f"/start — {sc('home')}\n"
+            f"/help — {sc('this menu')}\n"
+            f"/newchat — {sc('reset')}\n"
+            f"/checkin — {sc('streak')}\n"
+            f"/clone — {sc('twin bot')}\n"
+            f"/ping — {sc('speed')}\n"
+            f"/profile — {sc('your vibe')}",
+            help_kb(),
+        )
+    if key == "help_owner":
+        return (
+            f"👑 <b>{sc('owner')}</b>\n{LINE}\n\n"
+            f"@{OWNER_USER}\n"
+            f"/stats  /broadcast\n"
+            f"/heal  /restart",
+            help_kb(),
         )
     if key == "ui_mood":
         return (
-            f"{pe('mood', '🆭')} <b>{sc('choose mood')}</b>\n{LINE}\n\n"
-            f"{sc('now')} · <code>{prefs['mode']}</code>",
+            f"🆭 <b>{sc('choose mood')}</b>\n{LINE}\n\n"
+            f"{sc('now')} · <code>{prefs['mode']}</code>\n"
+            f"{sc('tap one then chat')}",
             mood_kb(prefs["mode"]),
         )
     if key == "ui_lang":
         return (
-            f"{pe('lang', '🌐')} <b>{sc('choose language')}</b>\n{LINE}\n\n"
-            f"{sc('now')} · <code>{prefs['lang']}</code>",
+            f"🌐 <b>{sc('choose language')}</b>\n{LINE}\n\n"
+            f"{sc('now')} · <code>{prefs['lang']}</code>\n"
+            f"{sc('tap one then chat')}",
             lang_kb(prefs["lang"]),
         )
     if key == "ui_profile":
@@ -225,19 +288,19 @@ def _screen(key, user, bot):
         doc = users.find_one({"user_id": user.id}) or {}
         mem_lines = "\n".join(f"• {k}: {v}" for k, v in list(mem.items())[:6]) or sc("empty")
         return (
-            f"{pe('user', '👤')} <b>{sc('profile')}</b>\n{LINE}\n\n"
+            f"👤 <b>{sc('profile')}</b>\n{LINE}\n\n"
             f"{sc('mood')} · <code>{prefs['mode']}</code>\n"
             f"{sc('lang')} · <code>{prefs['lang']}</code>\n"
             f"{sc('streak')} · <code>{doc.get('checkin_streak') or 0}</code>\n\n"
             f"{mem_lines}",
-            back_kb(),
+            nav_kb("home"),
         )
     if key == "ui_clone":
         return (
-            f"{pe('clone', '🤖')} <b>{sc('clone')}</b>\n{LINE}\n\n"
+            f"🤖 <b>{sc('clone')}</b>\n{LINE}\n\n"
             "<code>/clone TOKEN</code>\n"
             "<code>/myclones</code>",
-            back_kb(),
+            nav_kb("home"),
         )
     if key == "ui_owner":
         return owner_card()
@@ -263,6 +326,7 @@ async def ui_callback(update, context):
         lang = data.split("_", 1)[1]
         if lang in LANGS:
             set_pref(user.id, lang=lang)
+            chat_logs.delete_many({"user_id": user.id, "chat_id": query.message.chat_id, "role": "assistant"})
             await query.answer(f"Lang · {lang}")
         else:
             await query.answer()
@@ -273,7 +337,11 @@ async def ui_callback(update, context):
     await query.answer()
     if data == "ui_newchat":
         chat_logs.delete_many({"user_id": user.id, "chat_id": query.message.chat_id})
-        await paint(query, f"{pe('spark', '✨')} <b>{sc('new chat')}</b>\n{LINE}\n\n{sc('purani baat reset ho gayi')}", back_kb())
+        await paint(
+            query,
+            f"✨ <b>{sc('new chat')}</b>\n{LINE}\n\n{sc('purani baat reset ho gayi')}",
+            nav_kb("home"),
+        )
         return
     if data == "ui_checkin":
         from modules.checkin import do_checkin_text
@@ -281,7 +349,7 @@ async def ui_callback(update, context):
             body = await do_checkin_text(user)
         except Exception:
             body = sc("checkin done")
-        await paint(query, f"{pe('cal', '📅')} <b>{sc('check in')}</b>\n{LINE}\n\n{body}", back_kb())
+        await paint(query, f"📅 <b>{sc('check in')}</b>\n{LINE}\n\n{body}", nav_kb("home"))
         return
     packed = _screen(data, user, context.bot)
     if packed:
@@ -291,4 +359,4 @@ async def ui_callback(update, context):
 def register(app):
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(start_from_callback, pattern="^home$"))
-    app.add_handler(CallbackQueryHandler(ui_callback, pattern="^(ui_|mood_|langset_)"))
+    app.add_handler(CallbackQueryHandler(ui_callback, pattern="^(ui_|mood_|langset_|help_)"))

@@ -1,7 +1,8 @@
 import time
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup
 from telegram.ext import CommandHandler
 from config import SUPPORT_CHANNEL
+from helpers.ui import btn
 
 
 async def ping(update, context):
@@ -15,12 +16,10 @@ async def ping(update, context):
     else:
         status = "Warming up"
     await msg.edit_text(
-        f"🏓 <b>PONG</b>\n"
-        f"<code>{ms} ms</code> • {status}\n"
-        f"AI router ready.",
+        f"🏓 <b>PONG</b>\n<code>{ms} ms</code> • {status}",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Support", url=SUPPORT_CHANNEL)]]
+            [[btn("Support", url=SUPPORT_CHANNEL, pe_name="news")]]
         ),
     )
 

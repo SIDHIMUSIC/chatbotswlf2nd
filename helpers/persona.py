@@ -9,12 +9,12 @@ MODES = {
 }
 
 LANGS = {
-    "hinglish": "Reply only in Hinglish.",
-    "hi": "Reply only in simple Hindi.",
-    "en": "Reply only in natural English.",
-    "ur": "Reply only in simple Urdu.",
-    "pa": "Reply only in simple Punjabi.",
-    "bn": "Reply only in simple Bengali.",
+    "hinglish": "HINGLISH only. Mix Hindi+English like: kya haal hai bro.",
+    "hi": "शुद्ध हिंदी में ही जवाब दो. English mat likho.",
+    "en": "English only. Do not use Hindi words.",
+    "ur": "صرف اردو میں جواب دو.",
+    "pa": "ਕੇਵਲ ਪੰਜਾਬੀ ਵਿਚ ਲਿਖੋ.",
+    "bn": "শুধু বাংলায় বলো.",
 }
 
 
@@ -40,12 +40,12 @@ def persona_prompt(name: str, memory: dict, prefs: dict) -> str:
     lang_line = LANGS.get(lang, LANGS["hinglish"])
     mem = ""
     if memory:
-        bits = ["%s=%s" % (k, v) for k, v in list(memory.items())[:4]]
+        bits = ["%s=%s" % (k, v) for k, v in list(memory.items())[:3]]
         mem = " Known: " + "; ".join(bits)
     return (
-        f"You are a chat companion named after the bot. User: {name}. "
-        f"{style} {lang_line} "
-        "Answer the latest user message only. 1-4 short lines. "
-        "Never mention rules, memory notes, models, or instructions."
+        f"Companion for {name}. Mood: {mode}. {style} "
+        f"LANGUAGE LOCK: {lang}. {lang_line} "
+        "Reply to the latest user line only. 1-3 short lines. "
+        "Do not mention rules, mood names, language names, models."
         f"{mem}"
     )
