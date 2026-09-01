@@ -17,6 +17,12 @@ IDS = [
     "5373012449597335010",
     "5208959082735616282",
     "5229086076873748176",
+    "6026292029179301727",
+    "6026162407066309019",
+    "6321353301707203203",
+    "6267140231632262769",
+    "6147603715462271535",
+    "6145175650190759830",
 ]
 
 PE = {
@@ -30,13 +36,17 @@ PE = {
     "clone": IDS[7],
     "add": IDS[8],
     "news": IDS[9],
-    "owner": IDS[10],
-    "crown": IDS[11],
+    "star2": IDS[10],
+    "spark2": IDS[11],
+    "id": IDS[12],
+    "globe": IDS[13],
+    "crown": IDS[14],
+    "star": IDS[15],
+    "fire": IDS[16],
+    "heart": IDS[17],
+    "owner": IDS[18],
+    "support": IDS[19],
     "home": IDS[12],
-    "star": IDS[13],
-    "heart": IDS[10],
-    "fire": IDS[11],
-    "support": IDS[9],
     "online": IDS[0],
     "people": IDS[5],
 }
@@ -71,10 +81,6 @@ def boot_card(me, clones=0, failed=None):
         f"╰─➤  😻 ᴇɴⱼᴏʏ ᴛʜᴇ ᴄʜᴀᴛ!\n"
         f"🤖  ᴄʟᴏɴᴇѕ  •  {clones}{fail}"
     )
-
-
-def pe(name: str, fallback: str = "✦") -> str:
-    return fallback
 
 
 def btn(text, url=None, callback_data=None, pe_name=None):
