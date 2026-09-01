@@ -3,15 +3,23 @@ from telegram import InlineKeyboardButton
 from config import OWNER_ID, SUPPORT_CHANNEL
 
 PE = {
+    "chat": "6026162407066309019",
+    "help": "6026292029179301727",
+    "mood": "6267140231632262769",
+    "lang": "6321353301707203203",
+    "spark": "6026292029179301727",
+    "user": "6147603715462271535",
+    "cal": "6026162407066309019",
+    "bot": "6145175650190759830",
+    "add": "6321353301707203203",
+    "news": "6026292029179301727",
+    "owner": "6147603715462271535",
     "crown": "6026292029179301727",
+    "home": "6267140231632262769",
     "star": "6026162407066309019",
     "fire": "6321353301707203203",
     "heart": "6267140231632262769",
-    "owner": "6147603715462271535",
     "support": "6145175650190759830",
-    "chat": "6026162407066309019",
-    "spark": "6026292029179301727",
-    "home": "6267140231632262769",
 }
 
 LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -64,7 +72,7 @@ def btn(text, url=None, callback_data=None, pe_name=None):
         kwargs["url"] = url
     if callback_data:
         kwargs["callback_data"] = callback_data
-    eid = (PE.get(pe_name) or "").strip() if pe_name else ""
+    eid = (PE.get(pe_name) or PE.get("star") or "").strip() if pe_name else ""
     if eid.isdigit():
         kwargs["icon_custom_emoji_id"] = eid
     try:
