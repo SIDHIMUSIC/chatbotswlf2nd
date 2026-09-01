@@ -2,29 +2,44 @@
 import traceback
 from telegram import BotCommand
 from telegram.ext import ApplicationBuilder, ContextTypes
+from telegram.error import Conflict, NetworkError, TimedOut, RetryAfter
 
 from config import TOKEN, OWNER_ID, LOG_GROUP_ID
 from utils.auto_loader import load_modules, load_tools
 from helpers.clone_runtime import start_saved_clones, UPDATES
+from helpers.heal import note_error, soft_heal
 
 
 async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
+    err = context.error
+    quiet = isinstance(err, (TimedOut, RetryAfter, NetworkError)) and not isinstance(err, Conflict)
     error_text = "".join(
-        traceback.format_exception(None, context.error, context.error.__traceback__)
+        traceback.format_exception(None, err, err.__traceback__ if err else None)
     )
-    try:
-        if update and getattr(update, "effective_message", None):
-            await update.effective_message.reply_text("Thodi dikkat aa gayi.")
-    except Exception:
-        pass
-    try:
-        await context.bot.send_message(OWNER_ID, f"ERROR\n{error_text[:3500]}")
-    except Exception as e:
-        print("OWNER DM FAILED:", e)
-    print(error_text)
+    if not quiet:
+        try:
+            if update and getattr(update, "effective_message", None):
+                await update.effective_message.reply_text("Gadbad hui, khud theek kar raha hoon.")
+        except Exception:
+            pass
+        try:
+            await context.bot.send_message(OWNER_ID, f"ERROR\n{str(err)[:800]}")
+        except Exception as e:
+            print("OWNER DM FAILED:", e)
+        print(error_text[:2000])
+    else:
+        print("NET SKIP:", type(err).__name__, err)
+
+    restarted = note_error(err)
+    if restarted:
+        try:
+            await context.bot.send_message(OWNER_ID, "Auto-restart scheduled.")
+        except Exception:
+            pass
 
 
 async def _post_init(application):
+    soft_heal()
     try:
         await application.bot.set_my_commands([
             BotCommand("start", "Open home panel"),
@@ -33,6 +48,8 @@ async def _post_init(application):
             BotCommand("clone", "Clone a bot token"),
             BotCommand("checkin", "Daily check-in"),
             BotCommand("ping", "Speed check"),
+            BotCommand("restart", "Owner reboot"),
+            BotCommand("heal", "Owner self-fix"),
         ])
     except Exception as e:
         print("set commands skip:", e)
@@ -46,7 +63,7 @@ async def _post_init(application):
         text = (
             f"Online: {me.first_name} (@{me.username})\n"
             f"Clones live: {len(started)}\n"
-            + ("Failed: " + "; ".join(failed[:5]) if failed else "Groq ready.")
+            + ("Failed: " + "; ".join(failed[:5]) if failed else "Groq + self-heal ready.")
         )
         await application.bot.send_message(OWNER_ID, text)
     except Exception as e:
@@ -64,7 +81,7 @@ def main():
     load_modules(app)
     load_tools(app)
     app.add_error_handler(error_handler)
-    print("HARRY online — Groq")
+    print("HARRY online — Groq + heal")
     app.run_polling(
         drop_pending_updates=True,
         allowed_updates=UPDATES,

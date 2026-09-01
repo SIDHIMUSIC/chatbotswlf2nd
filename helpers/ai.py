@@ -39,6 +39,9 @@ def _post_groq(model, messages):
         timeout=CHAT_TIMEOUT,
     )
     data = r.json() if r.content else {}
+    if r.status_code == 429:
+        mark_fail(model)
+        raise RuntimeError(f"groq/{model}: rate limited")
     if r.status_code >= 400 or "choices" not in data:
         raise RuntimeError(f"groq/{model}: {data.get('error', data)}")
     text = _extract_text(data)

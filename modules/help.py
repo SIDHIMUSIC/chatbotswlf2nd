@@ -26,20 +26,20 @@ PAGES = {
         "Seedha message bhejo.\n"
         "<code>yaad rakh city: Patna</code>\n"
         "joke / shayari likho to mood change.\n\n"
-        "AI NaraRouter pe chalti hai, OpenRouter backup."
+        "AI Groq Llama pe chalti hai."
     ),
     "help_image": (
         "🖼 <b>IMAGE</b>\n"
         f"{LINE}\n\n"
-        "<code>/image cyberpunk indian boy 4k</code>\n"
-        "<code>/image lord krishna digital art</code>"
+        "Groq image nahi deta. Chat text only."
     ),
     "help_owner": (
         "👑 <b>OWNER</b>\n"
         f"{LINE}\n\n"
         "/stats /broadcast /models\n"
-        "/refreshmodels /pestatus\n"
-        "/botban /botunban"
+        "/heal /fix — cache + model cooldown clear\n"
+        "/restart /reboot — process reboot\n"
+        "Chat me: <code>sudhar</code> / <code>gadbad</code> / <code>restart</code>"
     ),
 }
 

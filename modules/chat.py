@@ -11,10 +11,12 @@ from helpers import (
     get_memory,
     set_memory,
     is_bot_banned,
+    is_owner,
     users,
     chat_logs,
 )
 from helpers.persona import get_prefs, persona_prompt
+from helpers.heal import can_restart, owner_intent, schedule_restart, soft_heal
 
 try:
     from helpers.learning import save_learned_reply, get_learned_reply
@@ -80,6 +82,24 @@ async def chat(update, context):
         )
         if not mentioned and not nickname_called and not replied_to_bot:
             return
+
+    if is_owner(user.id):
+        intent = owner_intent(text)
+        if intent == "restart":
+            if not can_restart():
+                await update.message.reply_text("Abhi cooldown. 3 min baad restart.")
+                return
+            soft_heal()
+            await update.message.reply_text("Theek. Restart le raha hoon.")
+            schedule_restart(1.2)
+            return
+        if intent == "heal":
+            cleared = soft_heal()
+            await update.message.reply_text(
+                "Sudhar diya: " + (", ".join(cleared) or "ok")
+            )
+            return
+
     users.update_one(
         {"user_id": user.id},
         {"$set": {"first_name": user.first_name, "username": user.username, "last_seen": time.time()},
