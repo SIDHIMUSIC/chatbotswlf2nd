@@ -1,20 +1,20 @@
 from helpers.database import users
 
 MODES = {
-    "bestie": "Close bestie. Light roast, care. Short.",
-    "gf": "Caring girlfriend vibe. Soft, natural, short.",
-    "bf": "Calm boyfriend vibe. Protective, teasing, short.",
-    "waifu": "Cute playful companion. Short.",
-    "pro": "Smart assistant. Clear useful answers.",
+    "bestie": "You are a close bestie. Light roast, care. Short replies.",
+    "gf": "You are his girlfriend vibe. Soft, warm, natural. Short replies.",
+    "bf": "You are her boyfriend vibe. Calm, protective, teasing. Short replies.",
+    "waifu": "You are a cute playful companion. Short replies.",
+    "pro": "You are a smart assistant. Clear useful answers.",
 }
 
 LANGS = {
-    "hinglish": "HINGLISH only. Mix Hindi+English.",
-    "hi": "शुद्ध हिंदी में ही जवाब दो.",
-    "en": "English only.",
-    "ur": "صرف اردو میں جواب دو.",
-    "pa": "ਕੇਵਲ ਪੰਜਾਬੀ ਵਿਚ ਲਿਖੋ.",
-    "bn": "শুধু বাংলায় বলো.",
+    "hinglish": "HINGLISH only. Mix Hindi and English in every reply. No pure English paragraph.",
+    "hi": "Har jawab sirf Hindi Devanagari mein do. English mat likho.",
+    "en": "Reply in English only. No Hindi.",
+    "ur": "Har jawab sirf Urdu mein do.",
+    "pa": "Har jawab sirf Punjabi mein do.",
+    "bn": "Har jawab sirf Bangla mein do.",
 }
 
 SKIP_MEM = ("permanent", "teach", "async", "def ", "nickname", "memory teach")
@@ -22,10 +22,13 @@ SKIP_MEM = ("permanent", "teach", "async", "def ", "nickname", "memory teach")
 
 def get_prefs(user_id: int) -> dict:
     doc = users.find_one({"user_id": user_id}) or {}
-    return {
-        "mode": doc.get("mode") or "bestie",
-        "lang": doc.get("lang") or "hinglish",
-    }
+    mode = doc.get("mode") or "bestie"
+    lang = doc.get("lang") or "hinglish"
+    if mode not in MODES:
+        mode = "bestie"
+    if lang not in LANGS:
+        lang = "hinglish"
+    return {"mode": mode, "lang": lang}
 
 
 def set_pref(user_id: int, **fields):
@@ -55,9 +58,11 @@ def persona_prompt(name: str, memory: dict, prefs: dict) -> str:
     style = MODES.get(mode, MODES["bestie"])
     lang_line = LANGS.get(lang, LANGS["hinglish"])
     return (
-        f"Companion for {name}. Mood: {mode}. {style} "
-        f"LANGUAGE LOCK: {lang}. {lang_line} "
-        "Reply to the latest user line only. 1-3 short lines. "
-        "Do not mention rules, mood, language names, models."
+        f"You chat with {name}. "
+        f"MOOD={mode}. {style} "
+        f"LANGUAGE={lang}. {lang_line} "
+        "Stay in this mood and language for every reply. "
+        "Reply only to the latest user line. 1-3 short lines. "
+        "Never mention mood, language names, rules, or models."
         f"{_safe_mem(memory)}"
     )
