@@ -24,12 +24,10 @@ from helpers.catalog import (
     or_chat_models,
     or_image_models,
 )
-from helpers.database import chat_logs
-from helpers.memory import get_memory
 
 _CACHE = {}
 _CACHE_TTL = 45
-CHAT_TIMEOUT = 12
+CHAT_TIMEOUT = 20
 MAX_TRIES = 2
 
 
@@ -94,6 +92,9 @@ def _messages_to_gemini(messages):
             contents.append({"role": "model", "parts": [{"text": text}]})
         else:
             contents.append({"role": "user", "parts": [{"text": text}]})
+    # Gemini 3.x rejects requests whose last content role is model.
+    if contents and contents[-1].get("role") == "model":
+        contents.append({"role": "user", "parts": [{"text": "continue"}]})
     return "\n".join(system_parts).strip(), contents
 
 
@@ -103,8 +104,15 @@ def _extract_gemini_text(data):
         content = cand.get("content") or {}
         for part in content.get("parts") or []:
             text = part.get("text")
-            if text:
+            if text and not part.get("thought"):
                 bits.append(text)
+    if bits:
+        return "\n".join(bits).strip()
+    for cand in data.get("candidates") or []:
+        content = cand.get("content") or {}
+        for part in content.get("parts") or []:
+            if part.get("text"):
+                bits.append(part["text"])
     return "\n".join(bits).strip()
 
 
@@ -116,8 +124,9 @@ def _post_gemini(model, messages):
     payload = {
         "contents": contents,
         "generationConfig": {
-            "maxOutputTokens": max(AI_MAX_TOKENS, 64),
+            "maxOutputTokens": max(AI_MAX_TOKENS, 256),
             "temperature": AI_TEMPERATURE,
+            "thinkingConfig": {"thinkingLevel": "LOW"},
         },
     }
     if system:
@@ -125,6 +134,7 @@ def _post_gemini(model, messages):
     r = requests.post(
         url,
         params={"key": GEMINI_API_KEY},
+        headers={"Content-Type": "application/json"},
         json=payload,
         timeout=CHAT_TIMEOUT,
     )
@@ -134,7 +144,7 @@ def _post_gemini(model, messages):
         raise RuntimeError(f"gemini/{model}: {err}")
     text = _extract_gemini_text(data)
     if not text:
-        raise RuntimeError(f"gemini/{model}: empty reply {data}")
+        raise RuntimeError(f"gemini/{model}: empty reply")
     return text
 
 

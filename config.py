@@ -8,6 +8,7 @@ SUPPORT_CHANNEL = os.getenv("SUPPORT_CHANNEL", "https://t.me/TG_BIO_STYLE")
 MONGO_URI = os.getenv("MONGODB_URI")
 
 # Gemini (Google AI Studio) — generateContent
+# New keys cannot use gemini-2.5-flash; use 3.6 / 3.7 Flash.
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY", "")
 GEMINI_BASE_URL = os.getenv(
     "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
@@ -16,7 +17,7 @@ GEMINI_MODELS = [
     m.strip()
     for m in os.getenv(
         "GEMINI_MODELS",
-        "gemini-flash-latest,gemini-2.5-flash,gemini-2.0-flash",
+        "gemini-3.6-flash,gemini-3.7-flash,gemini-flash-latest",
     ).split(",")
     if m.strip()
 ]
@@ -24,12 +25,12 @@ GEMINI_IMAGE_MODELS = [
     m.strip()
     for m in os.getenv(
         "GEMINI_IMAGE_MODELS",
-        "gemini-2.5-flash-image,gemini-2.0-flash-preview-image-generation",
+        "gemini-3.1-flash-image,gemini-3.1-flash-lite-image",
     ).split(",")
     if m.strip()
 ]
 
-# NaraRouter (primary) — https://router.bynara.id
+# NaraRouter — https://router.bynara.id
 NARA_API_KEY = os.getenv("NARA_API_KEY") or os.getenv("NARAROUTER_API_KEY", "")
 NARA_BASE_URL = os.getenv("NARA_BASE_URL", "https://router.bynara.id/v1").rstrip("/")
 
