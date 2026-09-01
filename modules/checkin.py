@@ -17,19 +17,25 @@ async def do_checkin_text(user):
     last = doc.get("checkin_day")
     streak = int(doc.get("checkin_streak") or 0)
     if last == today:
-        return f"{sc('already checked in')}\n{sc('streak')} · <code>{streak}</code>"
+        return (
+            f"✨  {sc('already checked in')}\n"
+            f"🔥  {sc('streak')}  ·  {streak}"
+        )
     streak = streak + 1 if last else 1
     users.update_one(
         {"user_id": user.id},
         {"$set": {"checkin_day": today, "checkin_streak": streak, "last_seen": time.time()}},
         upsert=True,
     )
-    return f"{sc('checked in')}\n{sc('streak')} · <code>{streak}</code>"
+    return (
+        f"✅  {sc('checked in')}\n"
+        f"🔥  {sc('streak')}  ·  {streak}"
+    )
 
 
 async def do_checkin(message, user):
     body = await do_checkin_text(user)
-    await message.reply_text(f"📅 {body}", parse_mode="HTML")
+    await message.reply_text(f"📅  {sc('check in')}\n\n{body}")
 
 
 async def checkin_cmd(update, context):
