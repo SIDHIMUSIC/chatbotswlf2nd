@@ -5,7 +5,7 @@ import re
 
 from telegram.ext import MessageHandler, filters
 
-from config import BOT_NICKNAMES, STICKERS
+from config import STICKERS
 from helpers import (
     safe_ai_async,
     get_fallback_reply,
@@ -18,6 +18,7 @@ from helpers import (
 )
 from helpers.persona import get_prefs, persona_prompt
 from helpers.heal import can_restart, owner_intent, schedule_restart, soft_heal
+from helpers.botme import nicknames, uname
 
 try:
     from helpers.learning import save_learned_reply, get_learned_reply
@@ -32,7 +33,7 @@ SKIP = {"Menu", "Imagine", "Help"}
 LEAK = re.compile(
     r"(we have a conversation|we must respond|normal baat|system prompt|"
     r"instruction says|use nickname|no mention of model|yaadein:|"
-    r"user ka naam|1 se 4 line|robotic mat)",
+    r"user ka naam|1 se 4 line|robotic mat|LANGUAGE=|MOOD=)",
     re.I,
 )
 
@@ -85,10 +86,10 @@ async def chat(update, context):
     name = user.first_name or "Friend"
     if is_bot_banned(user.id):
         return
-    bot_username = (context.bot.username or "").lower()
+    bot_username = uname(context.bot).lower()
     if update.effective_chat.type != "private":
         mentioned = f"@{bot_username}" in lower_text if bot_username else False
-        nickname_called = any(nick in lower_text for nick in BOT_NICKNAMES)
+        nickname_called = any(nick in lower_text for nick in nicknames(context.bot))
         replied_to_bot = (
             update.message.reply_to_message
             and update.message.reply_to_message.from_user
