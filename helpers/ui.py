@@ -2,24 +2,41 @@ from telegram import InlineKeyboardButton
 
 from config import OWNER_ID, SUPPORT_CHANNEL
 
+# User-provided custom emoji ids (unique per button)
+IDS = [
+    "5280858699286471614",
+    "6118209143972040877",
+    "5431427591120628886",
+    "5229102316145106683",
+    "5301096984617166561",
+    "6129584162992034014",
+    "6336813264122419000",
+    "6147896245684803245",
+    "6082592230021795516",
+    "6291916484918648855",
+]
+
 PE = {
-    "chat": "6026162407066309019",
-    "help": "6026292029179301727",
-    "mood": "6267140231632262769",
-    "lang": "6321353301707203203",
-    "spark": "6026292029179301727",
-    "user": "6147603715462271535",
-    "cal": "6026162407066309019",
-    "bot": "6145175650190759830",
-    "add": "6321353301707203203",
-    "news": "6026292029179301727",
-    "owner": "6147603715462271535",
-    "crown": "6026292029179301727",
-    "home": "6267140231632262769",
-    "star": "6026162407066309019",
-    "fire": "6321353301707203203",
-    "heart": "6267140231632262769",
-    "support": "6145175650190759830",
+    "hey": IDS[0],
+    "bot": IDS[1],
+    "chat": IDS[2],
+    "help": IDS[3],
+    "mood": IDS[4],
+    "lang": IDS[5],
+    "spark": IDS[6],
+    "user": IDS[7],
+    "cal": IDS[8],
+    "clone": IDS[9],
+    "add": IDS[0],
+    "news": IDS[1],
+    "owner": IDS[2],
+    "crown": IDS[3],
+    "home": IDS[4],
+    "heart": IDS[5],
+    "fire": IDS[6],
+    "star": IDS[7],
+    "support": IDS[8],
+    "online": IDS[9],
 }
 
 LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -45,25 +62,22 @@ def boot_card(me, clones=0, failed=None):
         f"          A I   C H A T\n"
         f"╰{LINE}╯\n\n"
         f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅʏ  😻\n\n"
-        f"🤖  ɴᴀᴍᴇ\n"
-        f"   └─ {name}\n\n"
-        f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n"
-        f"   └─ @{uname}\n\n"
-        f"🆔  ʙᴏᴛ ɪᴅ\n"
-        f"   └─ {bid}\n\n"
-        f"👑  ᴏᴡɴᴇʀ\n"
-        f"   └─ {OWNER_ID}\n\n"
+        f"🤖  ɴᴀᴍᴇ\n   └─ {name}\n\n"
+        f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n   └─ @{uname}\n\n"
+        f"🆔  ʙᴏᴛ ɪᴅ\n   └─ {bid}\n\n"
+        f"👑  ᴏᴡɴᴇʀ\n   └─ {OWNER_ID}\n\n"
         f"{LINE}\n\n"
         f"💞  ʜᴇʟʟᴏ, ɪ'ᴍ {name}\n"
-        f"🧠  ѕᴍᴀʀᴛ • ғᴀѕᴛ • ᴄᴜᴛᴇ\n"
-        f"⚡  ʀᴇᴀᴅʏ ᴛᴏ ᴄʜᴀᴛ\n\n"
         f"╰─➤  😻 ᴇɴⱼᴏʏ ᴛʜᴇ ᴄʜᴀᴛ!\n"
         f"🤖  ᴄʟᴏɴᴇѕ  •  {clones}{fail}"
     )
 
 
 def pe(name: str, fallback: str = "✦") -> str:
-    return fallback
+    eid = (PE.get(name) or "").strip()
+    if not eid.isdigit():
+        return fallback
+    return f'<tg-emoji emoji-id="{eid}">{fallback}</tg-emoji>'
 
 
 def btn(text, url=None, callback_data=None, pe_name=None):
@@ -72,7 +86,7 @@ def btn(text, url=None, callback_data=None, pe_name=None):
         kwargs["url"] = url
     if callback_data:
         kwargs["callback_data"] = callback_data
-    eid = (PE.get(pe_name) or PE.get("star") or "").strip() if pe_name else ""
+    eid = (PE.get(pe_name) or "").strip() if pe_name else ""
     if eid.isdigit():
         kwargs["icon_custom_emoji_id"] = eid
     try:

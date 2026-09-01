@@ -1,6 +1,7 @@
 import time
 import asyncio
 import random
+import re
 
 from telegram.ext import MessageHandler, filters
 
@@ -28,17 +29,30 @@ except ImportError:
         return None
 
 SKIP = {"Menu", "Imagine", "Help"}
+LEAK = re.compile(
+    r"(we have a conversation|we must respond|normal baat|system prompt|"
+    r"instruction says|use nickname|no mention of model|yaadein:|"
+    r"user ka naam|1 se 4 line|robotic mat)",
+    re.I,
+)
+
+
+def _clean(text: str) -> str:
+    t = (text or "").strip()
+    if not t or LEAK.search(t):
+        return ""
+    return t[:3500]
 
 
 def build_history(user_id, chat_id):
     rows = list(
-        chat_logs.find({"user_id": user_id, "chat_id": chat_id}).sort("time", -1).limit(10)
+        chat_logs.find({"user_id": user_id, "chat_id": chat_id}).sort("time", -1).limit(6)
     )
     rows.reverse()
     out = []
     for row in rows:
         role = row.get("role") if row.get("role") in ("user", "assistant") else "user"
-        msg = (row.get("text") or "").strip()[:240]
+        msg = _clean((row.get("text") or "")[:180])
         if msg:
             out.append({"role": role, "content": msg})
     return out
@@ -95,9 +109,7 @@ async def chat(update, context):
             return
         if intent == "heal":
             cleared = soft_heal()
-            await update.message.reply_text(
-                "Sudhar diya: " + (", ".join(cleared) or "ok")
-            )
+            await update.message.reply_text("Sudhar diya: " + (", ".join(cleared) or "ok"))
             return
 
     users.update_one(
@@ -116,10 +128,11 @@ async def chat(update, context):
             and update.message.reply_to_message.from_user.id == context.bot.id
         ):
             original = update.message.reply_to_message.text or ""
-            if original and text:
+            if original and text and not LEAK.search(original):
                 save_learned_reply(original, text, user.id)
     except Exception as e:
         print("Learning save error:", e)
+
     chat_logs.insert_one({
         "user_id": user.id,
         "chat_id": chat_id,
@@ -128,32 +141,23 @@ async def chat(update, context):
         "text": text[:500],
         "time": time.time(),
     })
-    if "joke" in lower_text or "funny" in lower_text:
-        style = "Short Hinglish joke."
-    elif "shayari" in lower_text:
-        style = "Chhoti Hindi shayari, 4 line."
-    elif any(w in lower_text for w in ("roleplay", "rp ", "scene")):
-        style = "Stay in the scene the user started."
-    else:
-        style = "Normal baat."
     prefs = get_prefs(user.id)
     messages = [{"role": "system", "content": persona_prompt(name, get_memory(user.id), prefs)}]
     messages.extend(build_history(user.id, chat_id))
-    messages.append({"role": "user", "content": "%s\n\n%s" % (style, text)})
+    messages.append({"role": "user", "content": text[:500]})
     reply = None
     try:
         learned = get_learned_reply(text)
-        if learned and random.random() < 0.08:
+        if learned and random.random() < 0.05 and not LEAK.search(learned):
             reply = learned
     except Exception:
         pass
     if not reply:
-        reply = await safe_ai_async(messages)
+        reply = _clean(await safe_ai_async(messages))
     if not reply:
         reply = get_fallback_reply(user.id, text, name)
-    reply = reply.strip()[:3500]
     await context.bot.send_chat_action(chat_id, "typing")
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(0.15)
     await update.message.reply_text(reply, reply_to_message_id=update.message.message_id)
     try:
         sticker = None
@@ -161,7 +165,7 @@ async def chat(update, context):
             sticker = STICKERS.get("love")
         elif any(w in lower_text for w in ["haha", "lol", "joke"]):
             sticker = STICKERS.get("laugh")
-        elif any(w in lower_text for w in ["hi", "hello", "hey"]):
+        elif any(w in lower_text for w in ["hi", "hello", "hey", "hy"]):
             sticker = STICKERS.get("hi")
         if sticker:
             await context.bot.send_sticker(chat_id=chat_id, sticker=sticker)
