@@ -1,38 +1,20 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from helpers.database import chat_logs, users
-from helpers.memory import get_memory
-from helpers.persona import MODES, get_prefs, set_pref
+from helpers.database import chat_logs
+from helpers.persona import get_prefs
 from helpers.style import sc
-
-
-def mode_kb():
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("Bestie", callback_data="mode_bestie"),
-            InlineKeyboardButton("GF vibe", callback_data="mode_gf"),
-        ],
-        [
-            InlineKeyboardButton("BF vibe", callback_data="mode_bf"),
-            InlineKeyboardButton("Waifu", callback_data="mode_waifu"),
-        ],
-        [InlineKeyboardButton("Pro AI", callback_data="mode_pro")],
-        [
-            InlineKeyboardButton("Hinglish", callback_data="lang_hinglish"),
-            InlineKeyboardButton("Hindi", callback_data="lang_hi"),
-            InlineKeyboardButton("English", callback_data="lang_en"),
-        ],
-        [InlineKeyboardButton("Home", callback_data="home")],
-    ])
+from modules.start import lang_kb, mood_kb
+from helpers.panel import paint
+from helpers.ui import LINE
 
 
 async def mode_cmd_send(message, user_id):
     prefs = get_prefs(user_id)
     await message.reply_text(
-        f"✦ {sc('choose vibe')}\nnow: <code>{prefs['mode']}</code> / <code>{prefs['lang']}</code>",
+        f"🆭 <b>{sc('choose mood')}</b>\n{LINE}\n\n"
+        f"{sc('now')} · <code>{prefs['mode']}</code>",
         parse_mode="HTML",
-        reply_markup=mode_kb(),
+        reply_markup=mood_kb(prefs["mode"]),
     )
 
 
@@ -40,49 +22,34 @@ async def newchat_cmd(update, context):
     uid = update.effective_user.id
     cid = update.effective_chat.id
     chat_logs.delete_many({"user_id": uid, "chat_id": cid})
-    await update.message.reply_text(f"✦ {sc('new chat unlocked')}\n{sc('purani baat reset ho gayi')}")
+    await update.message.reply_text(f"✨ {sc('new chat unlocked')}\n{sc('purani baat reset ho gayi')}")
 
 
 async def profile_cmd(update, context):
-    user = update.effective_user
-    prefs = get_prefs(user.id)
-    mem = get_memory(user.id)
-    doc = users.find_one({"user_id": user.id}) or {}
-    mem_lines = "\n".join(f"• {k}: {v}" for k, v in list(mem.items())[:8]) or sc("abhi khaali")
-    text = (
-        f"👤 <b>{sc('profile')}</b>\n\n"
-        f"{sc('mode')}: <code>{prefs['mode']}</code>\n"
-        f"{sc('lang')}: <code>{prefs['lang']}</code>\n"
-        f"{sc('streak')}: <code>{doc.get('checkin_streak') or 0}</code>\n\n"
-        f"{sc('memory')}\n{mem_lines}"
-    )
-    await update.message.reply_text(text, parse_mode="HTML", reply_markup=mode_kb())
+    from modules.start import _screen
+    text, kb = _screen("ui_profile", update.effective_user, context.bot)
+    await update.message.reply_text(text, parse_mode="HTML", reply_markup=kb)
 
 
 async def mode_cmd(update, context):
     await mode_cmd_send(update.message, update.effective_user.id)
 
 
+async def lang_cmd(update, context):
+    prefs = get_prefs(update.effective_user.id)
+    await update.message.reply_text(
+        f"🌐 <b>{sc('choose language')}</b>\n{LINE}\n\n"
+        f"{sc('now')} · <code>{prefs['lang']}</code>",
+        parse_mode="HTML",
+        reply_markup=lang_kb(prefs["lang"]),
+    )
+
+
 async def mode_callback(update, context):
     query = update.callback_query
     await query.answer()
-    data = query.data
-    uid = query.from_user.id
-    if data.startswith("mode_"):
-        mode = data.split("_", 1)[1]
-        if mode in MODES:
-            set_pref(uid, mode=mode)
-    elif data.startswith("lang_"):
-        set_pref(uid, lang=data.split("_", 1)[1])
-    prefs = get_prefs(uid)
-    try:
-        await query.edit_message_text(
-            f"✦ {sc('choose vibe')}\nnow: <code>{prefs['mode']}</code> / <code>{prefs['lang']}</code>",
-            parse_mode="HTML",
-            reply_markup=mode_kb(),
-        )
-    except Exception:
-        pass
+    from modules.start import ui_callback
+    return await ui_callback(update, context)
 
 
 async def imagine_cmd(update, context):
@@ -95,5 +62,7 @@ def register(app):
     app.add_handler(CommandHandler("reset", newchat_cmd))
     app.add_handler(CommandHandler("profile", profile_cmd))
     app.add_handler(CommandHandler("mode", mode_cmd))
+    app.add_handler(CommandHandler("mood", mode_cmd))
+    app.add_handler(CommandHandler("lang", lang_cmd))
+    app.add_handler(CommandHandler("language", lang_cmd))
     app.add_handler(CommandHandler("imagine", imagine_cmd))
-    app.add_handler(CallbackQueryHandler(mode_callback, pattern="^(mode_|lang_)"))
