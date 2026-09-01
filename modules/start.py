@@ -13,6 +13,7 @@ from helpers.ui import LINE, OWNER_USER, btn
 from helpers.panel import paint
 from helpers.rich import Rich
 from helpers.persona import LANGS, MODES, get_prefs, set_pref
+from helpers.botme import uname as live_uname
 
 IST = pytz.timezone("Asia/Kolkata")
 
@@ -34,7 +35,7 @@ LANG_LABEL = {
 
 
 def _uname(bot):
-    return (getattr(bot, "username", None) or BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
+    return live_uname(bot) or (BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
 
 
 def nav_kb(back_to=None):
@@ -46,13 +47,13 @@ def nav_kb(back_to=None):
 
 
 def home_kb(user_id=None, bot_username=None):
-    uname = (bot_username or BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
+    handle = (bot_username or live_uname() or BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
     rows = [
         [btn("ᴄʜᴀᴛ", callback_data="ui_chat", pe_name="chat"), btn("ʜᴇʟᴘ", callback_data="ui_help", pe_name="help")],
         [btn("ᴍᴏᴏᴅ", callback_data="ui_mood", pe_name="mood"), btn("ʟᴀɴɢ", callback_data="ui_lang", pe_name="lang")],
         [btn("ɴᴇᴡ ᴄʜᴀᴛ", callback_data="ui_newchat", pe_name="spark"), btn("ᴘʀᴏғɪʟᴇ", callback_data="ui_profile", pe_name="user")],
         [btn("ᴄʜᴇᴄᴋɪɴ", callback_data="ui_checkin", pe_name="cal"), btn("ᴄʟᴏɴᴇ", callback_data="ui_clone", pe_name="clone")],
-        [btn("ᴀᴅᴅ ᴛᴏ ɢʀᴏᴜᴘ", url=f"https://t.me/{uname}?startgroup=true", pe_name="add")],
+        [btn("ᴀᴅᴅ ᴛᴏ ɢʀᴏᴜᴘ", url=f"https://t.me/{handle}?startgroup=true", pe_name="add")],
         [btn("ᴜᴘᴅᴀᴛᴇѕ", url=SUPPORT_CHANNEL, pe_name="news"), btn("ᴏᴡɴᴇʀ", url=f"https://t.me/{OWNER_USER}", pe_name="owner")],
     ]
     if user_id and is_owner(user_id):
@@ -98,13 +99,13 @@ def help_kb():
 
 def caption_home(user, bot, extra_users=None):
     name = user.first_name or "✦"
-    uname = _uname(bot)
+    handle = _uname(bot)
     clock = datetime.now(IST).strftime("%I:%M %p")
     count = extra_users if extra_users not in (None, "-") else "—"
     prefs = get_prefs(user.id)
     r = Rich()
     r.e("star").t(f"  {sc('hey')}  {name}  ").e("spark").t("\n")
-    r.e("heart").t(f"  {sc('welcome to')}  @{uname}  ").e("fire").t("\n\n")
+    r.e("heart").t(f"  {sc('welcome to')}  @{handle}  ").e("fire").t("\n\n")
     r.e("user").t(f"  {sc('your personal ai companion')}\n\n")
     r.t(f"{LINE}\n")
     r.e("chat").t(f"  {sc('features')} : {sc('chat')} • {sc('voice')} • {sc('clone')} • {sc('groups')}\n")
@@ -175,7 +176,7 @@ def pack(r, kb):
 
 
 def _screen(key, user, bot):
-    uname = _uname(bot)
+    handle = _uname(bot)
     prefs = get_prefs(user.id)
     if key == "ui_chat":
         r = Rich()
@@ -187,7 +188,7 @@ def _screen(key, user, bot):
     if key in ("ui_help", "help_home"):
         r = Rich()
         r.e("help").t(f"  {sc('help menu')}\n{LINE}\n\n")
-        r.e("heart").t(f"  {sc('welcome to')}  @{uname}\n\n")
+        r.e("heart").t(f"  {sc('welcome to')}  @{handle}\n\n")
         r.e("chat").t(f"  {sc('chat')} — {sc('type anything')}\n")
         r.e("mood").t(f"  {sc('mood')} — gf / bf / bestie / waifu / pro\n")
         r.e("lang").t(f"  {sc('lang')} — hindi • english • hinglish\n")
@@ -212,11 +213,11 @@ def _screen(key, user, bot):
     if key == "ui_profile":
         doc = users.find_one({"user_id": user.id}) or {}
         chats = _chat_count(user.id)
-        handle = f"@{user.username}" if user.username else "—"
+        handle_u = f"@{user.username}" if user.username else "—"
         r = Rich()
         r.e("user").t(f"  {sc('profile')}\n{LINE}\n\n")
         r.e("star").t(f"  {user.first_name or '—'}\n")
-        r.e("spark").t(f"  {handle}\n")
+        r.e("spark").t(f"  {handle_u}\n")
         r.e("id").t(f"  {sc('id')}  ·  {user.id}\n")
         r.e("chat").t(f"  {sc('chats')}  ·  {chats}\n")
         r.e("mood").t(f"  {sc('mood')}  ·  {prefs['mode']}\n")
@@ -245,6 +246,7 @@ async def ui_callback(update, context):
         mode = data.split("_", 1)[1]
         if mode in MODES:
             set_pref(user.id, mode=mode)
+            chat_logs.delete_many({"user_id": user.id, "chat_id": query.message.chat_id, "role": "assistant"})
             await query.answer(f"Mood · {mode}")
         else:
             await query.answer()
