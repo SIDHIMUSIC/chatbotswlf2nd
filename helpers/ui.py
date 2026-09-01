@@ -2,7 +2,6 @@ from telegram import InlineKeyboardButton
 
 from config import OWNER_ID, SUPPORT_CHANNEL
 
-# User-provided custom emoji ids (unique per button)
 IDS = [
     "5280858699286471614",
     "6118209143972040877",
@@ -14,34 +13,40 @@ IDS = [
     "6147896245684803245",
     "6082592230021795516",
     "6291916484918648855",
+    "5440621591387980068",
+    "5373012449597335010",
+    "5208959082735616282",
+    "5229086076873748176",
 ]
 
 PE = {
-    "hey": IDS[0],
-    "bot": IDS[1],
-    "chat": IDS[2],
-    "help": IDS[3],
-    "mood": IDS[4],
-    "lang": IDS[5],
-    "spark": IDS[6],
-    "user": IDS[7],
-    "cal": IDS[8],
-    "clone": IDS[9],
-    "add": IDS[0],
-    "news": IDS[1],
-    "owner": IDS[2],
-    "crown": IDS[3],
-    "home": IDS[4],
-    "heart": IDS[5],
-    "fire": IDS[6],
-    "star": IDS[7],
-    "support": IDS[8],
-    "online": IDS[9],
+    "hey": IDS[10],
+    "bot": IDS[11],
+    "mood": IDS[12],
+    "lang": IDS[13],
+    "online": IDS[0],
+    "clock": IDS[1],
+    "people": IDS[2],
+    "chat": IDS[3],
+    "help": IDS[4],
+    "spark": IDS[5],
+    "user": IDS[6],
+    "cal": IDS[7],
+    "clone": IDS[8],
+    "add": IDS[9],
+    "news": IDS[10],
+    "owner": IDS[11],
+    "crown": IDS[12],
+    "home": IDS[13],
+    "heart": IDS[0],
+    "fire": IDS[1],
+    "star": IDS[2],
+    "support": IDS[3],
 }
 
 LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
 OWNER_USER = "SANATANI_BACHA"
-OWNER_NAME = "🉩◕𝐇𝐀𝐑𝐑𝐘◕🉪 =‌𐌓 ⨮⃘🇮🇳™"
+OWNER_NAME = "🉩◕🇧𝐀𝐑𝐑𝐘◕🉪 =‌𐌓 Ἑc⃘🇮🇳™"
 
 
 def spaced(word: str) -> str:
@@ -61,14 +66,11 @@ def boot_card(me, clones=0, failed=None):
         f"       💗  {title}  💗\n"
         f"          A I   C H A T\n"
         f"╰{LINE}╯\n\n"
-        f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅʏ  😻\n\n"
-        f"🤖  ɴᴀᴍᴇ\n   └─ {name}\n\n"
-        f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n   └─ @{uname}\n\n"
-        f"🆔  ʙᴏᴛ ɪᴅ\n   └─ {bid}\n\n"
-        f"👑  ᴏᴡɴᴇʀ\n   └─ {OWNER_ID}\n\n"
-        f"{LINE}\n\n"
-        f"💞  ʜᴇʟʟᴏ, ɪ'ᴍ {name}\n"
-        f"╰─➤  😻 ᴇɴⱼᴏʏ ᴛʜᴇ ᴄʜᴀᴛ!\n"
+        f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅʏ\n\n"
+        f"🤖  {name}\n"
+        f"👤  @{uname}\n"
+        f"🆔  {bid}\n"
+        f"👑  {OWNER_ID}\n"
         f"🤖  ᴄʟᴏɴᴇѕ  •  {clones}{fail}"
     )
 
