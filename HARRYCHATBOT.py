@@ -8,8 +8,7 @@ from config import TOKEN, OWNER_ID, LOG_GROUP_ID
 from utils.auto_loader import load_modules, load_tools
 from helpers.clone_runtime import start_saved_clones, UPDATES
 from helpers.heal import note_error, soft_heal
-from helpers.style import sc
-from helpers.ui import LINE, pe
+from helpers.ui import boot_card
 
 
 async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,14 +58,8 @@ async def _post_init(application):
         print("clone boot fail:", e)
     try:
         me = await application.bot.get_me()
-        star = pe("star", "✦")
-        extra = f"\n{sc('failed')} · {'; '.join(failed[:3])}" if failed else ""
-        text = (
-            f"{star} <b>@{me.username}</b> {sc('online')}\n"
-            f"{LINE}\n"
-            f"{sc('clones')} · <b>{len(started)}</b>{extra}"
-        )
-        await application.bot.send_message(OWNER_ID, text, parse_mode="HTML")
+        text = boot_card(me, clones=len(started), failed=failed)
+        await application.bot.send_message(OWNER_ID, text)
     except Exception as e:
         print("Startup notify skip:", e)
 

@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton
 
-from config import SUPPORT_CHANNEL
+from config import OWNER_ID, SUPPORT_CHANNEL
 
 PE = {
     "crown": "6026292029179301727",
@@ -14,16 +14,48 @@ PE = {
     "home": "6267140231632262769",
 }
 
-LINE = "<code>━━━━━━━━━━━━━━━━━━━━</code>"
+LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
 OWNER_USER = "SANATANI_BACHA"
 OWNER_NAME = "🉩◕𝐇𝐀𝐑𝐑𝐘◕🉪 =‌𐌓 ⨮⃘🇮🇳™"
 
 
+def spaced(word: str) -> str:
+    return "  ".join(list(word.upper()))
+
+
+def boot_card(me, clones=0, failed=None):
+    name = (getattr(me, "first_name", None) or "JULIET").strip()
+    uname = (getattr(me, "username", None) or "JULIET_MUSUCBOT").lstrip("@")
+    bid = getattr(me, "id", "—")
+    title = spaced(name[:12]) if name else spaced("JULIET")
+    fail = ""
+    if failed:
+        fail = f"\n⚠️  {failed[0][:80]}"
+    return (
+        f"╭{LINE}╮\n"
+        f"       💗  {title}  💗\n"
+        f"          A I   C H A T\n"
+        f"╰{LINE}╯\n\n"
+        f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅʏ  😻\n\n"
+        f"🤖  ɴᴀᴍᴇ\n"
+        f"   └─ {name}\n\n"
+        f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n"
+        f"   └─ @{uname}\n\n"
+        f"🆔  ʙᴏᴛ ɪᴅ\n"
+        f"   └─ {bid}\n\n"
+        f"👑  ᴏᴡɴᴇʀ\n"
+        f"   └─ {OWNER_ID}\n\n"
+        f"{LINE}\n\n"
+        f"💞  ʜᴇʟʟᴏ, ɪ'ᴍ {name}\n"
+        f"🧠  ѕᴍᴀʀᴛ • ғᴀѕᴛ • ᴄᴜᴛᴇ\n"
+        f"⚡  ʀᴇᴀᴅʏ ᴛᴏ ᴄʜᴀᴛ\n\n"
+        f"╰─➤  😻 ᴇɴⱼᴏʏ ᴛʜᴇ ᴄʜᴀᴛ!\n"
+        f"🤖  ᴄʟᴏɴᴇѕ  •  {clones}{fail}"
+    )
+
+
 def pe(name: str, fallback: str = "✦") -> str:
-    eid = (PE.get(name) or "").strip()
-    if not eid.isdigit():
-        return fallback
-    return f'<tg-emoji emoji-id="{eid}">{fallback}</tg-emoji>'
+    return fallback
 
 
 def btn(text, url=None, callback_data=None, pe_name=None):
