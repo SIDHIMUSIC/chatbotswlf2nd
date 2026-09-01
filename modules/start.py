@@ -60,10 +60,6 @@ def home_kb(user_id=None, bot_username=None):
     return InlineKeyboardMarkup(rows)
 
 
-def back_kb():
-    return nav_kb()
-
-
 def mood_kb(cur="bestie"):
     rows, row = [], []
     for key, label in MOOD_LABEL.items():
@@ -107,19 +103,19 @@ def caption_home(user, bot, extra_users=None):
     count = extra_users if extra_users not in (None, "-") else "—"
     prefs = get_prefs(user.id)
     r = Rich()
-    r.e("star", "✦").t(f"  {sc('hey')}  {name}  ").e("spark", "✨").t("\n")
-    r.e("heart", "💞").t(f"  {sc('welcome to')}  @{uname}  ").e("fire", "🔥").t("\n\n")
-    r.e("user", "🧠").t(f"  {sc('your personal ai companion')}\n\n")
+    r.e("star").t(f"  {sc('hey')}  {name}  ").e("spark").t("\n")
+    r.e("heart").t(f"  {sc('welcome to')}  @{uname}  ").e("fire").t("\n\n")
+    r.e("user").t(f"  {sc('your personal ai companion')}\n\n")
     r.t(f"{LINE}\n")
-    r.e("chat", "💬").t(f"  {sc('features')} : {sc('chat')} • {sc('voice')} • {sc('clone')} • {sc('groups')}\n")
-    r.e("mood", "🆭").t(f"  {sc('mood')} · {prefs['mode']}     ")
-    r.e("lang", "🌐").t(f"  {sc('lang')} · {prefs['lang']}\n")
+    r.e("chat").t(f"  {sc('features')} : {sc('chat')} • {sc('voice')} • {sc('clone')} • {sc('groups')}\n")
+    r.e("mood").t(f"  {sc('mood')} · {prefs['mode']}     ")
+    r.e("lang").t(f"  {sc('lang')} · {prefs['lang']}\n")
     r.t(f"{LINE}\n")
-    r.e("help", "📖").t(f"  {sc('tap help to see all commands')}\n\n")
-    r.e("online", "🟢").t(f"  {sc('online')}    ")
-    r.e("cal", "🕒").t(f"  {clock}    ")
-    r.e("people", "👤").t(f"  {count}\n")
-    r.e("crown", "✦").t(f"  {sc('powered by harry')}")
+    r.e("help").t(f"  {sc('tap help to see all commands')}\n\n")
+    r.e("online").t(f"  {sc('online')}    ")
+    r.e("cal").t(f"  {clock}    ")
+    r.e("people").t(f"  {count}\n")
+    r.e("crown").t(f"  {sc('powered by harry')}")
     return r.build()
 
 
@@ -173,22 +169,6 @@ async def start_from_callback(update, context):
         await send_home(query.message, query.from_user, context.bot)
 
 
-def owner_card():
-    r = Rich()
-    r.e("crown", "👑").t(f"  {sc('bot owner')}\n{LINE}\n\n")
-    r.e("spark", "✨").t(f"  {sc('crafted and managed by')}\n")
-    r.e("user", "👤").t("  Harry\n")
-    r.e("star", "🔗").t(f"  @{OWNER_USER}\n\n")
-    r.e("fire", "🚀").t(f"  {sc('developer')} • {sc('automation')} • {sc('ai bots')}\n")
-    r.e("heart", "💡").t(f"  {sc('tap below to connect')}")
-    kb = InlineKeyboardMarkup([
-        [btn("◍ ᴏᴡɴᴇʀ ◍", url=f"https://t.me/{OWNER_USER}", pe_name="owner")],
-        [btn("◍ ѕᴜᴘᴘᴏʀᴛ ◍", url=SUPPORT_CHANNEL, pe_name="news")],
-        [btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"), btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown")],
-    ])
-    return r.build() + (kb,)
-
-
 def pack(r, kb):
     text, ents = r.build()
     return text, kb, ents
@@ -199,57 +179,58 @@ def _screen(key, user, bot):
     prefs = get_prefs(user.id)
     if key == "ui_chat":
         r = Rich()
-        r.e("chat", "💬").t(f"  {sc('live chat')}\n{LINE}\n\n")
-        r.e("spark", "✨").t(f"  {sc('neeche type karo')}\n")
-        r.e("mood", "🆭").t(f"  {sc('mood')} · {prefs['mode']}\n")
-        r.e("lang", "🌐").t(f"  {sc('lang')} · {prefs['lang']}")
+        r.e("chat").t(f"  {sc('live chat')}\n{LINE}\n\n")
+        r.e("spark").t(f"  {sc('neeche type karo')}\n")
+        r.e("mood").t(f"  {sc('mood')} · {prefs['mode']}\n")
+        r.e("lang").t(f"  {sc('lang')} · {prefs['lang']}")
         return pack(r, nav_kb("home"))
     if key in ("ui_help", "help_home"):
         r = Rich()
-        r.e("help", "📖").t(f"  {sc('help menu')}\n{LINE}\n\n")
-        r.e("heart", "🧠").t(f"  {sc('welcome to')}  @{uname}\n\n")
-        r.e("chat", "💬").t(f"  {sc('chat')} — {sc('type anything')}\n")
-        r.e("mood", "🆭").t(f"  {sc('mood')} — gf / bf / bestie / waifu / pro\n")
-        r.e("lang", "🌐").t(f"  {sc('lang')} — hindi • english • hinglish\n")
-        r.e("cal", "📅").t(f"  {sc('checkin')} — {sc('daily streak')}\n")
-        r.e("clone", "🤖").t(f"  {sc('clone')} — /clone TOKEN")
+        r.e("help").t(f"  {sc('help menu')}\n{LINE}\n\n")
+        r.e("heart").t(f"  {sc('welcome to')}  @{uname}\n\n")
+        r.e("chat").t(f"  {sc('chat')} — {sc('type anything')}\n")
+        r.e("mood").t(f"  {sc('mood')} — gf / bf / bestie / waifu / pro\n")
+        r.e("lang").t(f"  {sc('lang')} — hindi • english • hinglish\n")
+        r.e("cal").t(f"  {sc('checkin')} — {sc('daily streak')}\n")
+        r.e("clone").t(f"  {sc('clone')} — /clone TOKEN")
         return pack(r, help_kb())
     if key == "help_chat":
-        r = Rich().e("chat", "💬").t(f"  {sc('chat guide')}\n{LINE}\n\n✨  {sc('just type')}\n🎙️  {sc('voice note bhejo')}")
+        r = Rich().e("chat").t(f"  {sc('chat guide')}\n{LINE}\n\n{sc('just type')}\n{sc('voice note bhejo')}")
         return pack(r, help_kb())
     if key == "help_tools":
-        r = Rich().e("spark", "✨").t(f"  {sc('tools')}\n{LINE}\n\n/start   /help   /newchat\n/checkin   /clone   /ping   /profile")
+        r = Rich().e("spark").t(f"  {sc('tools')}\n{LINE}\n\n/start   /help   /newchat\n/checkin   /clone   /ping   /profile")
         return pack(r, help_kb())
     if key == "help_owner":
-        r = Rich().e("crown", "👑").t(f"  {sc('owner')}\n{LINE}\n\n🔗  @{OWNER_USER}\n/stats   /heal   /restart")
+        r = Rich().e("crown").t(f"  {sc('owner')}\n{LINE}\n\n@{OWNER_USER}\n/stats   /broadcast   /heal")
         return pack(r, help_kb())
     if key == "ui_mood":
-        r = Rich().e("mood", "🆭").t(f"  {sc('choose mood')}\n{LINE}\n\n✨  {sc('now')} · {prefs['mode']}")
+        r = Rich().e("mood").t(f"  {sc('choose mood')}\n{LINE}\n\n{sc('now')} · {prefs['mode']}")
         return pack(r, mood_kb(prefs["mode"]))
     if key == "ui_lang":
-        r = Rich().e("lang", "🌐").t(f"  {sc('choose language')}\n{LINE}\n\n✨  {sc('now')} · {prefs['lang']}")
+        r = Rich().e("lang").t(f"  {sc('choose language')}\n{LINE}\n\n{sc('now')} · {prefs['lang']}")
         return pack(r, lang_kb(prefs["lang"]))
     if key == "ui_profile":
         doc = users.find_one({"user_id": user.id}) or {}
         chats = _chat_count(user.id)
         handle = f"@{user.username}" if user.username else "—"
         r = Rich()
-        r.e("user", "👤").t(f"  {sc('profile')}\n{LINE}\n\n")
-        r.e("star", "✦").t(f"  {user.first_name or '—'}\n")
-        r.e("spark", "🔗").t(f"  {handle}\n")
-        r.e("crown", "🆔").t(f"  {sc('id')}  ·  {user.id}\n")
-        r.e("chat", "💬").t(f"  {sc('chats')}  ·  {chats}\n")
-        r.e("mood", "🆭").t(f"  {sc('mood')}  ·  {prefs['mode']}\n")
-        r.e("lang", "🌐").t(f"  {sc('lang')}  ·  {prefs['lang']}\n")
-        r.e("cal", "🔥").t(f"  {sc('streak')}  ·  {doc.get('checkin_streak') or 0}")
+        r.e("user").t(f"  {sc('profile')}\n{LINE}\n\n")
+        r.e("star").t(f"  {user.first_name or '—'}\n")
+        r.e("spark").t(f"  {handle}\n")
+        r.e("id").t(f"  {sc('id')}  ·  {user.id}\n")
+        r.e("chat").t(f"  {sc('chats')}  ·  {chats}\n")
+        r.e("mood").t(f"  {sc('mood')}  ·  {prefs['mode']}\n")
+        r.e("lang").t(f"  {sc('lang')}  ·  {prefs['lang']}\n")
+        r.e("fire").t(f"  {sc('streak')}  ·  {doc.get('checkin_streak') or 0}")
         return pack(r, nav_kb("home"))
     if key == "ui_clone":
         r = Rich()
-        r.e("clone", "🤖").t(f"  {sc('clone')}\n{LINE}\n\n")
-        r.e("spark", "✨").t(f"  {sc('botfather se naya bot banao')}\n\n")
-        r.t("➤  /clone TOKEN\n➤  /myclones")
+        r.e("clone").t(f"  {sc('clone')}\n{LINE}\n\n")
+        r.e("spark").t(f"  {sc('botfather se naya bot banao')}\n\n")
+        r.t("/clone TOKEN\n/myclones")
         return pack(r, nav_kb("home"))
     if key == "ui_owner":
+        from modules.owner import owner_card
         text, ents, kb = owner_card()
         return text, kb, ents
     return None
@@ -285,7 +266,7 @@ async def ui_callback(update, context):
     await query.answer()
     if data == "ui_newchat":
         chat_logs.delete_many({"user_id": user.id, "chat_id": query.message.chat_id})
-        r = Rich().e("spark", "✨").t(f"  {sc('new chat')}\n{LINE}\n\n{sc('purani baat reset ho gayi')}")
+        r = Rich().e("spark").t(f"  {sc('new chat')}\n{LINE}\n\n{sc('purani baat reset ho gayi')}")
         text, ents = r.build()
         await paint(query, text, nav_kb("home"), ents)
         return
@@ -295,7 +276,7 @@ async def ui_callback(update, context):
             body = await do_checkin_text(user)
         except Exception:
             body = sc("checkin done")
-        r = Rich().e("cal", "📅").t(f"  {sc('check in')}\n{LINE}\n\n{body}")
+        r = Rich().e("cal").t(f"  {sc('check in')}\n{LINE}\n\n{body}")
         text, ents = r.build()
         await paint(query, text, nav_kb("home"), ents)
         return
