@@ -1,6 +1,8 @@
+import random
+
 from telegram.ext import CommandHandler, MessageHandler, filters
 
-from config import STICKERS
+from config import START_IMAGES, STICKERS
 from helpers.database import db
 from helpers.decorators import is_owner
 from helpers.rich import Rich
@@ -54,6 +56,7 @@ async def welcome(update, context):
     if not welcome_on(chat.id):
         return
     bot_id = context.bot.id
+    photo = random.choice(START_IMAGES) if START_IMAGES else None
     for member in msg.new_chat_members:
         if member.id == bot_id:
             try:
@@ -64,19 +67,53 @@ async def welcome(update, context):
         if member.is_bot:
             continue
         text, ents = _card(member, chat)
-        try:
-            await msg.reply_text(text, entities=ents)
-        except Exception:
+        sent = False
+        if photo:
             try:
-                await msg.reply_text(text)
+                await msg.reply_photo(photo=photo, caption=text, caption_entities=ents)
+                sent = True
             except Exception:
-                pass
+                try:
+                    await msg.reply_photo(photo=photo, caption=text)
+                    sent = True
+                except Exception:
+                    pass
+        if not sent:
+            try:
+                await msg.reply_text(text, entities=ents)
+            except Exception:
+                try:
+                    await msg.reply_text(text)
+                except Exception:
+                    pass
         sid = STICKERS.get("hi") or STICKERS.get("s1")
         if sid:
             try:
                 await msg.reply_sticker(sid)
             except Exception:
                 pass
+
+
+async def goodbye(update, context):
+    msg = update.message
+    if not msg or not msg.left_chat_member:
+        return
+    chat = update.effective_chat
+    if not welcome_on(chat.id):
+        return
+    member = msg.left_chat_member
+    if member.is_bot or member.id == context.bot.id:
+        return
+    name = member.first_name or "friend"
+    r = Rich().e("sad" if False else "heart").t(f"  {sc('bye')}  {name}")
+    text, ents = r.build()
+    try:
+        await msg.reply_text(text, entities=ents)
+    except Exception:
+        try:
+            await msg.reply_text(f"Bye {name}")
+        except Exception:
+            pass
 
 
 async def welcome_cmd(update, context):
@@ -99,4 +136,5 @@ async def welcome_cmd(update, context):
 
 def register(app):
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
+    app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye))
     app.add_handler(CommandHandler("welcome", welcome_cmd))
