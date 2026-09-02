@@ -1,8 +1,13 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationHandlerStop, MessageHandler, filters
 
-from config import MUST_JOIN, MUST_JOIN_PHOTO
+from config import MUST_JOIN, MUST_JOIN_PHOTO, TOKEN
 from helpers.decorators import is_owner
+
+
+def _is_clone(bot) -> bool:
+    tok = getattr(bot, "token", None) or ""
+    return bool(TOKEN) and tok != TOKEN
 
 
 def _channel():
@@ -18,6 +23,8 @@ def _link(handle):
 
 
 async def must_join_channel(update, context):
+    if _is_clone(context.bot):
+        return
     handle = _channel()
     if not handle:
         return
@@ -64,6 +71,8 @@ async def must_join_channel(update, context):
 
 
 def register(app):
+    if _is_clone(app.bot):
+        return
     app.add_handler(
         MessageHandler(filters.ChatType.PRIVATE, must_join_channel),
         group=-2,
