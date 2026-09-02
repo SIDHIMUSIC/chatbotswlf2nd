@@ -20,6 +20,7 @@ from helpers.persona import get_prefs, persona_prompt
 from helpers.heal import can_restart, owner_intent, schedule_restart, soft_heal
 from helpers.botme import nicknames, uname
 from helpers.flood import too_fast
+from helpers.greet import maybe_greet
 
 try:
     from helpers.learning import save_learned_reply, get_learned_reply
@@ -122,6 +123,10 @@ async def chat(update, context):
          "$inc": {"xp": 1}},
         upsert=True,
     )
+    try:
+        await maybe_greet(update.message, user, chat_id)
+    except Exception as e:
+        print("greet skip:", e)
     if _maybe_remember(user.id, text):
         await update.message.reply_text("Theek, yaad rakh liya.")
         return
