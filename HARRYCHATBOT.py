@@ -10,6 +10,7 @@ from helpers.clone_runtime import start_saved_clones, UPDATES
 from helpers.heal import note_error, soft_heal
 from helpers.ui import boot_card
 from helpers.botme import apply_me
+from helpers.purge import purge_old_logs
 
 
 async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
@@ -43,6 +44,10 @@ async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
 async def _post_init(application):
     soft_heal()
     try:
+        purge_old_logs()
+    except Exception as e:
+        print("purge skip:", e)
+    try:
         me = await application.bot.get_me()
         apply_me(me)
         application.bot_data["username"] = me.username
@@ -57,6 +62,10 @@ async def _post_init(application):
             BotCommand("checkin", "Daily check-in"),
             BotCommand("clone", "Clone a bot"),
             BotCommand("ping", "Ping"),
+            BotCommand("afk", "AFK status"),
+            BotCommand("rank", "XP rank"),
+            BotCommand("id", "ID card"),
+            BotCommand("welcome", "Welcome on/off"),
         ])
     except Exception as e:
         print("set commands skip:", e)
