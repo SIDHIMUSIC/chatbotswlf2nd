@@ -4,6 +4,8 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 LOG_GROUP_ID = int(os.getenv("LOG_GROUP_ID", "0"))
 SUPPORT_CHANNEL = os.getenv("SUPPORT_CHANNEL", "https://t.me/TG_BIO_STYLE")
+MUST_JOIN = os.getenv("MUST_JOIN") or os.getenv("UPDATE_CHNL") or "TG_BIO_STYLE"
+MUST_JOIN_PHOTO = os.getenv("MUST_JOIN_PHOTO", "https://envs.sh/Tn_.jpg")
 MONGO_URI = os.getenv("MONGODB_URI")
 
 GROQ_API_KEY = (
