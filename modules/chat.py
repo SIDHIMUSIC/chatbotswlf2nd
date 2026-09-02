@@ -19,6 +19,7 @@ from helpers import (
 from helpers.persona import get_prefs, persona_prompt
 from helpers.heal import can_restart, owner_intent, schedule_restart, soft_heal
 from helpers.botme import nicknames, uname
+from helpers.flood import too_fast
 
 try:
     from helpers.learning import save_learned_reply, get_learned_reply
@@ -112,6 +113,8 @@ async def chat(update, context):
             cleared = soft_heal()
             await update.message.reply_text("Sudhar diya: " + (", ".join(cleared) or "ok"))
             return
+    elif too_fast(user.id):
+        return
 
     users.update_one(
         {"user_id": user.id},
