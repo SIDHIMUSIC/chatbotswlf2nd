@@ -14,8 +14,6 @@ def _channel():
 
 
 def _link(handle):
-    if handle.startswith("+") or handle.startswith("-"):
-        return f"https://t.me/{handle}"
     return f"https://t.me/{handle}"
 
 
@@ -38,19 +36,24 @@ async def must_join_channel(update, context):
         if member.status in ("member", "administrator", "creator", "restricted"):
             return
     except Exception as e:
+        err = str(e).lower()
         print("must_join check:", e)
+        if "admin" in err or "chat not found" in err or "peer" in err:
+            return
     link = _link(handle)
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("߉ ᴊᴏɪɴ ᴄʜᴀɴɴᴇʟ ߉", url=link)]])
+    kb = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Join Channel", url=link)]]
+    )
     cap = (
-        f"👋  {user.first_name}\n\n"
-        f"Channel join karo tab message chalega.\n"
+        f"Hello {user.first_name}\n\n"
+        f"Channel join karo tab bot chalega.\n"
         f"{link}"
     )
     try:
         if MUST_JOIN_PHOTO:
             await msg.reply_photo(photo=MUST_JOIN_PHOTO, caption=cap, reply_markup=kb)
         else:
-            await msg.reply_text(cap, reply_markup=kb, disable_web_page_preview=False)
+            await msg.reply_text(cap, reply_markup=kb)
     except Exception as e:
         print("must_join send:", e)
         try:
