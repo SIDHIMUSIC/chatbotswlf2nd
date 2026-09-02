@@ -51,8 +51,8 @@ async def lang_cmd(update, context):
 
 
 async def imagine_cmd(update, context):
-    from modules.image import image_cmd
-    return await image_cmd(update, context)
+    if update.message:
+        await update.message.reply_text("Image gen off. Chat + sticker use karo.")
 
 
 def register(app):
