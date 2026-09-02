@@ -51,6 +51,23 @@ PE = {
     "people": IDS[5],
 }
 
+STYLE_BY_PE = {
+    "help": "success",
+    "add": "primary",
+    "support": "success",
+    "owner": "danger",
+    "crown": "danger",
+    "home": "danger",
+    "chat": "primary",
+    "mood": "success",
+    "lang": "primary",
+    "spark": "success",
+    "user": "primary",
+    "cal": "success",
+    "clone": "primary",
+    "news": "danger",
+}
+
 LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
 OWNER_USER = "SANATANI_BACCHA"
 OWNER_NAME = "Harry"
@@ -83,7 +100,7 @@ def boot_card(me, clones=0, failed=None):
     )
 
 
-def btn(text, url=None, callback_data=None, pe_name=None):
+def btn(text, url=None, callback_data=None, pe_name=None, style=None):
     kwargs = {"text": text}
     if url:
         kwargs["url"] = url
@@ -92,8 +109,15 @@ def btn(text, url=None, callback_data=None, pe_name=None):
     eid = (PE.get(pe_name) or "").strip() if pe_name else ""
     if eid.isdigit():
         kwargs["icon_custom_emoji_id"] = eid
+    color = style or STYLE_BY_PE.get(pe_name or "")
+    if color in ("primary", "success", "danger"):
+        kwargs["style"] = color
     try:
         return InlineKeyboardButton(**kwargs)
     except TypeError:
-        kwargs.pop("icon_custom_emoji_id", None)
-        return InlineKeyboardButton(**kwargs)
+        kwargs.pop("style", None)
+        try:
+            return InlineKeyboardButton(**kwargs)
+        except TypeError:
+            kwargs.pop("icon_custom_emoji_id", None)
+            return InlineKeyboardButton(**kwargs)
