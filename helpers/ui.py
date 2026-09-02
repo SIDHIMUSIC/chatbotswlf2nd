@@ -52,7 +52,7 @@ PE = {
 }
 
 LINE = "━━━━━━━━━━━━━━━━━━━━━━━━━━"
-OWNER_USER = "SANATANI_BACHA"
+OWNER_USER = "SANATANI_BACCHA"
 OWNER_NAME = "Harry"
 
 
@@ -71,14 +71,14 @@ def boot_card(me, clones=0, failed=None):
         f"       💗  {title}  💗\n"
         f"          A I   C H A T\n"
         f"╰{LINE}╯\n\n"
-        f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅʏ  😻\n\n"
+        f"      🟢  ᴏɴʟɪɴᴇ  •  ʀᴇᴀᴅᴢ  😻\n\n"
         f"🤖  ɴᴀᴍᴇ\n   └─ {name}\n\n"
         f"👤  ᴜѕᴇʀɴᴀᴍᴇ\n   └─ @{uname}\n\n"
         f"🆔  ʙᴏᴛ ɪᴅ\n   └─ {bid}\n\n"
-        f"👑  ᴏᴡɴᴇʀ\n   └─ {OWNER_ID}\n\n"
+        f"👑  ᴏᴡɴᴇʀ\n   └─ @{OWNER_USER}\n\n"
         f"{LINE}\n\n"
-        f"💞  ʜᴇʟʟᴏ, ɪ'ᴍ {name}\n"
-        f"╰─➤  😻 ᴇɴⱼᴏʏ ᴛʜᴇ ᴄʜᴀᴛ!\n"
+        f"💞  ʜᴇʟʟᴏ, ɪ's {name}\n"
+        f"╰─➤  😻 ᴇɴⱼᴏᴢ ᴛʜᴇ ᴄʜᴀᴛ!\n"
         f"🤖  ᴄʟᴏɴᴇѕ  •  {clones}{fail}"
     )
 
