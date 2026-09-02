@@ -49,12 +49,12 @@ def nav_kb(back_to=None):
 def home_kb(user_id=None, bot_username=None):
     handle = (bot_username or live_uname() or BOT_USERNAME or "HARRY_HERUKOBOT").lstrip("@")
     rows = [
-        [btn("ᴄʜᴀᴛ", callback_data="ui_chat", pe_name="chat"), btn("ʜᴇʟᴘ", callback_data="ui_help", pe_name="help")],
-        [btn("ᴍᴏᴏᴅ", callback_data="ui_mood", pe_name="mood"), btn("ʟᴀɴɢ", callback_data="ui_lang", pe_name="lang")],
-        [btn("ɴᴇᴡ ᴄʜᴀᴛ", callback_data="ui_newchat", pe_name="spark"), btn("ᴘʀᴏғɪʟᴇ", callback_data="ui_profile", pe_name="user")],
-        [btn("ᴄʜᴇᴄᴋɪɴ", callback_data="ui_checkin", pe_name="cal"), btn("ᴄʟᴏɴᴇ", callback_data="ui_clone", pe_name="clone")],
+        [btn("ʜᴇʟᴘ", callback_data="ui_help", pe_name="help")],
         [btn("ᴀᴅᴅ ᴛᴏ ɢʀᴏᴜᴘ", url=f"https://t.me/{handle}?startgroup=true", pe_name="add")],
-        [btn("ᴜᴘᴅᴀᴛᴇѕ", url=SUPPORT_CHANNEL, pe_name="news"), btn("ᴏᴡɴᴇʀ", url=f"https://t.me/{OWNER_USER}", pe_name="owner")],
+        [
+            btn("ѕᴜᴘᴘᴏʀᴛ", url=SUPPORT_CHANNEL, pe_name="support"),
+            btn("ᴏᴡɴᴇʀ", url=f"https://t.me/{OWNER_USER}", pe_name="owner"),
+        ],
     ]
     if user_id and is_owner(user_id):
         rows.append([btn("ᴄᴏɴѕᴏʟᴇ", callback_data="ui_owner", pe_name="crown")])
@@ -71,7 +71,10 @@ def mood_kb(cur="bestie"):
             row = []
     if row:
         rows.append(row)
-    rows.append([btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"), btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown")])
+    rows.append([
+        btn("◀️ ʙᴀᴄᴋ", callback_data="ui_help", pe_name="home"),
+        btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+    ])
     return InlineKeyboardMarkup(rows)
 
 
@@ -85,15 +88,23 @@ def lang_kb(cur="hinglish"):
             row = []
     if row:
         rows.append(row)
-    rows.append([btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"), btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown")])
+    rows.append([
+        btn("◀️ ʙᴀᴄᴋ", callback_data="ui_help", pe_name="home"),
+        btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+    ])
     return InlineKeyboardMarkup(rows)
 
 
 def help_kb():
     return InlineKeyboardMarkup([
-        [btn("ᴄʜᴀᴛ", callback_data="help_chat", pe_name="chat"), btn("ᴛᴏᴏʟѕ", callback_data="help_tools", pe_name="spark")],
-        [btn("ᴏᴡɴᴇʀ", callback_data="help_owner", pe_name="crown"), btn("ᴄʟᴏɴᴇ", callback_data="ui_clone", pe_name="clone")],
-        [btn("◀️ ʙᴀᴄᴋ", callback_data="ui_help", pe_name="home"), btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="star")],
+        [btn("ᴄʜᴀᴛ", callback_data="ui_chat", pe_name="chat"), btn("ᴍᴏᴏᴅ", callback_data="ui_mood", pe_name="mood")],
+        [btn("ʟᴀɴɢ", callback_data="ui_lang", pe_name="lang"), btn("ɴᴇᴡ ᴄʜᴀᴛ", callback_data="ui_newchat", pe_name="spark")],
+        [btn("ᴘʀᴏғɪʟᴇ", callback_data="ui_profile", pe_name="user"), btn("ᴄʜᴇᴄᴋɪɴ", callback_data="ui_checkin", pe_name="cal")],
+        [btn("ᴄʟᴏɴᴇ", callback_data="ui_clone", pe_name="clone"), btn("ᴛᴏᴏʟѕ", callback_data="help_tools", pe_name="spark")],
+        [
+            btn("◀️ ʙᴀᴄᴋ", callback_data="home", pe_name="home"),
+            btn("🏠 ʜᴏᴍᴇ", callback_data="home", pe_name="crown"),
+        ],
     ])
 
 
@@ -184,7 +195,7 @@ def _screen(key, user, bot):
         r.e("spark").t(f"  {sc('neeche type karo')}\n")
         r.e("mood").t(f"  {sc('mood')} · {prefs['mode']}\n")
         r.e("lang").t(f"  {sc('lang')} · {prefs['lang']}")
-        return pack(r, nav_kb("home"))
+        return pack(r, nav_kb("ui_help"))
     if key in ("ui_help", "help_home"):
         r = Rich()
         r.e("help").t(f"  {sc('help menu')}\n{LINE}\n\n")
@@ -223,13 +234,13 @@ def _screen(key, user, bot):
         r.e("mood").t(f"  {sc('mood')}  ·  {prefs['mode']}\n")
         r.e("lang").t(f"  {sc('lang')}  ·  {prefs['lang']}\n")
         r.e("fire").t(f"  {sc('streak')}  ·  {doc.get('checkin_streak') or 0}")
-        return pack(r, nav_kb("home"))
+        return pack(r, nav_kb("ui_help"))
     if key == "ui_clone":
         r = Rich()
         r.e("clone").t(f"  {sc('clone')}\n{LINE}\n\n")
         r.e("spark").t(f"  {sc('botfather se naya bot banao')}\n\n")
         r.t("/clone TOKEN\n/myclones")
-        return pack(r, nav_kb("home"))
+        return pack(r, nav_kb("ui_help"))
     if key == "ui_owner":
         from modules.owner import owner_card
         text, ents, kb = owner_card()
@@ -270,7 +281,7 @@ async def ui_callback(update, context):
         chat_logs.delete_many({"user_id": user.id, "chat_id": query.message.chat_id})
         r = Rich().e("spark").t(f"  {sc('new chat')}\n{LINE}\n\n{sc('purani baat reset ho gayi')}")
         text, ents = r.build()
-        await paint(query, text, nav_kb("home"), ents)
+        await paint(query, text, nav_kb("ui_help"), ents)
         return
     if data == "ui_checkin":
         from modules.checkin import do_checkin_text
@@ -280,7 +291,7 @@ async def ui_callback(update, context):
             body = sc("checkin done")
         r = Rich().e("cal").t(f"  {sc('check in')}\n{LINE}\n\n{body}")
         text, ents = r.build()
-        await paint(query, text, nav_kb("home"), ents)
+        await paint(query, text, nav_kb("ui_help"), ents)
         return
     packed = _screen(data, user, context.bot)
     if packed:
