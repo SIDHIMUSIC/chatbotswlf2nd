@@ -26,11 +26,11 @@ def _wire(app):
         pass
 
 
-async def start_clone(token: str, bot_id=None):
+async def start_clone(token, bot_id=None):
     token = (token or "").strip()
     if not token:
         return False, "empty token"
-    if bot_id and bot_id in RUNNING:
+    if bot_id and int(bot_id) in RUNNING:
         return True, "already running"
     if len(RUNNING) >= MAX_CLONES:
         return False, f"limit {MAX_CLONES} live clones"
@@ -49,7 +49,7 @@ async def start_clone(token: str, bot_id=None):
         return False, str(e)[:180]
 
 
-async def stop_clone(bot_id: int):
+async def stop_clone(bot_id):
     app = RUNNING.pop(int(bot_id), None)
     if not app:
         return False
@@ -63,10 +63,11 @@ async def stop_clone(bot_id: int):
 
 
 async def start_saved_clones():
-    started = []
-    failed = []
-    items = get_all_clones()[:MAX_CLONES]
+    started, failed = [], []
+    items = [c for c in get_all_clones() if c.get("approved") is not False][:MAX_CLONES]
     for item in items:
+        if item.get("approved") is False:
+            continue
         ok, info = await start_clone(item.get("bot_token"), item.get("bot_id"))
         name = item.get("bot_username") or info
         if ok:
@@ -75,13 +76,3 @@ async def start_saved_clones():
             failed.append(f"{name}: {info}")
     print("Clones started:", started, "failed:", failed)
     return started, failed
-
-
-def running_usernames():
-    out = []
-    for bot_id, app in RUNNING.items():
-        try:
-            out.append(f"{bot_id}")
-        except Exception:
-            out.append(str(bot_id))
-    return list(RUNNING.keys())
